@@ -2,8 +2,7 @@ import json
 from typing import List, Tuple, Union
 
 class Settings:
-    def __init__(self, path="gameconfig.json", tilesize: tuple = (20, 20), autosave: bool = False) -> None:
-        # oop/ only needed when using with vscode?
+    def __init__(self, path="Facharbeit_Snake_Game/gameconfig.json", tilesize: tuple = (20, 20), autosave: bool = False):
         self.path = path
         self.load()
         self.tilesize = tilesize

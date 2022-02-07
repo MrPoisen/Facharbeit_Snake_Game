@@ -73,13 +73,13 @@ class SnakeHead(pygame.sprite.Sprite):
     def make_surf(self, top=True, right=True, bottom=True, left=True):
         self.surf.fill(THECOLORS.get("green"))
         if top:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (20, 0))
+            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (19, 0))
         if right:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (20, 0), (20, 20))
+            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (19, 0), (19, 19))
         if bottom:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 20), (20, 20))
+            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 19), (19, 19))
         if left:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (0, 20))
+            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (0, 19))
 
     def accept_direction(self, pressed_keys):
         if pressed_keys[K_UP] and self._lastdirection != Direction.DOWN:
@@ -100,7 +100,6 @@ class SnakeHead(pygame.sprite.Sprite):
 
         if collide_with_apple:  # adds tail on the position the head was on before
             tail = Tail(old_topleft)
-            #tail.outline(self.edgeblits)
             self.tails.insert(0, tail)
             self.tail_group.add(tail)
             self.all_group.add(tail)
@@ -127,6 +126,9 @@ class SnakeHead(pygame.sprite.Sprite):
 
                 tail.update(x, y)  # new topleft
         # Für die richtige Darstellung
+        if len(self.tails) == 0:
+            self.make_surf()
+            return
         top = bottom = left = right = True
         if self.direction == Direction.UP:
             self.make_surf(bottom=False)
@@ -140,8 +142,7 @@ class SnakeHead(pygame.sprite.Sprite):
         elif self.direction == Direction.LEFT:
             self.make_surf(right=False)
             left = False
-        if len(self.tails) == 0:
-            return
+
         # erster Schlangenteil
         if not len(self.tails) > 1:
             self.tails[0].make_surf(top, right, bottom, left)
@@ -151,29 +152,29 @@ class SnakeHead(pygame.sprite.Sprite):
         elif self.tails[0].rect.topleft[0] > self.tails[1].rect.topleft[0]:
             left = False
         elif self.tails[0].rect.topleft[1] < self.tails[1].rect.topleft[1]:
-            top = False
-        elif self.tails[0].rect.topleft[1] < self.tails[1].rect.topleft[1]:
             bottom = False
+        elif self.tails[0].rect.topleft[1] > self.tails[1].rect.topleft[1]:
+            top = False
         self.tails[0].make_surf(top, right, bottom, left)
-        for index, tail in enumerate(self.tails[1:]):
+        for one_index, tail in enumerate(self.tails[1:]):
             top = bottom = left = right = True
-            if tail.rect.topleft[0] > self.tails[index - 1].rect.topleft[0]:
-                right = False
-            elif tail.rect.topleft[0] < self.tails[index - 1].rect.topleft[0]:
+            if tail.rect.topleft[0] > self.tails[one_index].rect.topleft[0]:
                 left = False
-            elif tail.rect.topleft[1] > self.tails[index - 1].rect.topleft[1]:
+            elif tail.rect.topleft[0] < self.tails[one_index].rect.topleft[0]:
+                right = False
+            elif tail.rect.topleft[1] > self.tails[one_index].rect.topleft[1]:
                 top = False
-            elif tail.rect.topleft[1] < self.tails[index - 1].rect.topleft[1]:
+            elif tail.rect.topleft[1] < self.tails[one_index].rect.topleft[1]:
                 bottom = False
-            if index+1 < len(self.tails):
-                if tail.rect.topleft[0] < self.tails[index+1].rect.topleft[0]:
+            if one_index+2 < len(self.tails):
+                if tail.rect.topleft[0] < self.tails[one_index + 2].rect.topleft[0]:
                     right = False
-                elif tail.rect.topleft[0] > self.tails[index+1].rect.topleft[0]:
+                elif tail.rect.topleft[0] > self.tails[one_index + 2].rect.topleft[0]:
                     left = False
-                elif tail.rect.topleft[1] < self.tails[index+1].rect.topleft[1]:
-                    top = False
-                elif tail.rect.topleft[1] < self.tails[index+1].rect.topleft[1]:
+                elif tail.rect.topleft[1] < self.tails[one_index + 2].rect.topleft[1]:
                     bottom = False
+                elif tail.rect.topleft[1] > self.tails[one_index + 2].rect.topleft[1]:
+                    top = False
             tail.make_surf(top, right, bottom, left)
 
     def add_tail(self, tail):
@@ -208,15 +209,14 @@ class Tail(pygame.sprite.Sprite):
 
     def update(self, x, y) -> None:
         self.rect.move_ip(x, y)
-        #self.surf.blit(self.topsurf, (0, 0))
 
     def make_surf(self, top=True, right=True, bottom=True, left=True):
         self.surf.fill(THECOLORS.get("green"))
         if top:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (20, 0))
+            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (19, 0))
         if right:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (20, 0), (20, 20))
+            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (19, 0), (19, 19))
         if bottom:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 20), (20, 20))
+            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 19), (19, 19))
         if left:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (0, 20))
+            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (0, 19))

@@ -145,7 +145,7 @@ class MainMenu:
     def setup_ui(self):
         game_config = self.settings.content
         self.ui_elements = {}
-        self.ui_manager = pygame_gui.ui_manager.UIManager(MAINSCREEN_SIZE, "gametheme.json")
+        self.ui_manager = pygame_gui.ui_manager.UIManager(MAINSCREEN_SIZE, "Facharbeit_Snake_Game/gametheme.json")
 
         # Fonts laden
         self.ui_manager.preload_fonts([{'name': 'fira_code', 'point_size': 14, 'style': 'bold'}])

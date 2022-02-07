@@ -33,7 +33,7 @@ class Game:
     """
     Basisklasse für das Spiel, die bereits die standard Snake-Variante implementiert
     """
-    def __init__(self, settings: Settings, screen) -> None:
+    def __init__(self, settings: Settings) -> None:
         self.settings = settings
 
         # Spiel/Spielstand
@@ -53,7 +53,7 @@ class Game:
         self.snake.tail_group = self.tails
         self.snake.all_group = self.all_entities
 
-        self.mainscreen = screen
+        self.mainscreen = resize(self.settings.size)
 
     def events(self):
         for event in pygame.event.get():
@@ -94,16 +94,13 @@ class Game:
         for i in range(self.settings.size[0]//TILE_SIZE[0]):
             for ii in range(self.settings.size[1]//TILE_SIZE[1]):
                 if (i % 2 == 0 and ii % 2 == 0) or (i % 2 != 0 and ii % 2 != 0):
-                    pygame.draw.rect(self.mainscreen, (30, 30, 30, 100),
+                    pygame.draw.rect(self.mainscreen, (30, 30, 30, 100), # Farbe ist ein dunkles Grau
                                      pygame.Rect(i*TILE_SIZE[0], ii*TILE_SIZE[1], *TILE_SIZE))
                 else:
                     pygame.draw.rect(self.mainscreen, THECOLORS.get("black"),
                                      pygame.Rect(i * TILE_SIZE[0], ii * TILE_SIZE[1], *TILE_SIZE))
 
-
     def run(self) -> None:
-        #mainscreen = self.mainscreen
-
         self.running = True
         passed_frames = 0  # time till next move
         while self.running:
@@ -120,9 +117,7 @@ class Game:
                 self.apple_logic()
                 self.snake_logic()
 
-            #self.mainscreen.fill(THECOLORS.get("black"))
             self.blit_background()
-
             for entity in self.all_entities:
                 self.mainscreen.blit(entity.surf, entity.rect)
 
@@ -262,7 +257,6 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
 def run(settings: Settings, presize: Tuple[int, int]):
     GAMEMODES = {"default": Game, "no_walls": WithoutWall, "switching_head": HeadSwitch}
     game_class = GAMEMODES.get(settings.gamemode)
-    screen = resize(settings.size)
-    game_class(settings, screen).run()
+    game_class(settings).run()
     screen = resize(presize)
     return screen
