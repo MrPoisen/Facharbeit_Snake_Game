@@ -216,11 +216,16 @@ class HeadSwitch(Game):
 
 class WithoutWall(Game):
     def snake_logic(self):
+        relocated = {}
         if hits_wall(self.snake, self.settings.size):
             self.move(self.snake)
         for tail in self.snake.tails:
+            prepos = tail.rect.topleft
             self.move(tail)
-        self.snake.texture()
+            if tail.rect.topleft != prepos:
+                relocated[tail] = prepos
+
+        self.snake.texture((relocated, self.settings))
         if pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
             # Wenn die Snake gegen eine Wand trifft oder gegen ein Schwanzteil
             self.running = False

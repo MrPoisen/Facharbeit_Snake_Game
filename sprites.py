@@ -7,8 +7,10 @@ from pygame.locals import (
     K_RIGHT,
   )
 
-from typing import List, Dict
+from typing import List, Tuple, Dict
 from enum import Enum, auto
+
+from settings import Settings
 
 
 class Direction(Enum):
@@ -116,7 +118,7 @@ class SnakeHead(pygame.sprite.Sprite):
         if texture:
             self.texture()
 
-    def texture(self):
+    def texture(self, relocated: Tuple[Dict["Tail", tuple], Settings] = None):
         # Für die richtige Darstellung
         if len(self.tails) == 0:
             self.make_surf()
@@ -148,24 +150,24 @@ class SnakeHead(pygame.sprite.Sprite):
         elif self.tails[0].rect.topleft[1] > self.tails[1].rect.topleft[1]:
             top = False
         self.tails[0].make_surf(top, right, bottom, left)
-        for one_index, tail in enumerate(self.tails[1:]):
+        for one_index, tail in enumerate(self.tails[1:], 1):
             top = bottom = left = right = True
-            if tail.rect.topleft[0] > self.tails[one_index].rect.topleft[0]:
+            if tail.rect.topleft[0] > self.tails[one_index - 1].rect.topleft[0] or (relocated is not None and tail in relocated[0].keys() and relocated[0].get(tail)[0] >= relocated[1].size[0]):
                 left = False
-            elif tail.rect.topleft[0] < self.tails[one_index].rect.topleft[0]:
+            elif tail.rect.topleft[0] < self.tails[one_index - 1].rect.topleft[0] or (relocated is not None and tail in relocated[0].keys() and relocated[0].get(tail)[0] < 0):
                 right = False
-            elif tail.rect.topleft[1] > self.tails[one_index].rect.topleft[1]:
+            elif tail.rect.topleft[1] > self.tails[one_index - 1].rect.topleft[1] or (relocated is not None and tail in relocated[0].keys() and relocated[0].get(tail)[1] >= relocated[1].size[1]):
                 top = False
-            elif tail.rect.topleft[1] < self.tails[one_index].rect.topleft[1]:
+            elif tail.rect.topleft[1] < self.tails[one_index - 1].rect.topleft[1] or (relocated is not None and tail in relocated[0].keys() and relocated[0].get(tail)[1] < 0):
                 bottom = False
-            if one_index + 2 < len(self.tails):
-                if tail.rect.topleft[0] < self.tails[one_index + 2].rect.topleft[0]:
+            if one_index + 1 < len(self.tails):
+                if tail.rect.topleft[0] < self.tails[one_index + 1].rect.topleft[0]:
                     right = False
-                elif tail.rect.topleft[0] > self.tails[one_index + 2].rect.topleft[0]:
+                elif tail.rect.topleft[0] > self.tails[one_index + 1].rect.topleft[0]:
                     left = False
-                elif tail.rect.topleft[1] < self.tails[one_index + 2].rect.topleft[1]:
+                elif tail.rect.topleft[1] < self.tails[one_index + 1].rect.topleft[1]:
                     bottom = False
-                elif tail.rect.topleft[1] > self.tails[one_index + 2].rect.topleft[1]:
+                elif tail.rect.topleft[1] > self.tails[one_index + 1].rect.topleft[1]:
                     top = False
             tail.make_surf(top, right, bottom, left)
 
