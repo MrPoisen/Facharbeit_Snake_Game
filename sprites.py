@@ -43,7 +43,6 @@ class SnakeHead(pygame.sprite.Sprite):
     def __init__(self, size: tuple = (20, 20)):
         super(SnakeHead, self).__init__()
         self.surf = pygame.Surface(size)
-        self.surf.fill(THECOLORS.get("green"))
 
         self.rect = self.surf.get_rect()
         self.direction = Direction.RIGHT
@@ -99,32 +98,20 @@ class SnakeHead(pygame.sprite.Sprite):
         self.rect.update(next_pos_rect.left, next_pos_rect.top, self.rect.width, self.rect.height)
 
         if collide_with_apple:  # adds tail on the position the head was on before
-            tail = Tail(old_topleft)
+            tail = Tail(old_topleft, self.direction)
             self.tails.insert(0, tail)
             self.tail_group.add(tail)
             self.all_group.add(tail)
 
         else:  # moves tails
-
-            for index, tail in enumerate(self.tails):
-                x = 0
-                y = 0
-                if old_topleft[0] == tail.rect.topleft[0]:  # topleft[0] = topleft.x
-                    pass
-                elif old_topleft[0] > tail.rect.topleft[0]:  # block before is more right
-                    x = move_value
-                else:
-                    x = -move_value
-
-                if old_topleft[1] == tail.rect.topleft[1]:
-                    pass
-                elif old_topleft[1] > tail.rect.topleft[1]:  # block before is more down
-                    y = move_value
-                else:
-                    y = -move_value
-                old_topleft = tail.rect.topleft
-
-                tail.update(x, y)  # new topleft
+            old_directions = []
+            for tail in self.tails:
+                tail.update()
+                old_directions.append(tail.direction)
+            old_directions.insert(0, self.direction)
+            old_directions.pop()
+            for tail, old_direction in zip(self.tails, old_directions):
+                tail.direction = old_direction
 
         if texture:
             self.texture()
@@ -203,16 +190,27 @@ class SnakeHead(pygame.sprite.Sprite):
             self._lastdirection = Direction.invert(Direction.DOWN)
 
 class Tail(pygame.sprite.Sprite):
-    def __init__(self, position: tuple, size: tuple = (20, 20)):
+    def __init__(self, position: tuple, direction: Direction, size: tuple = (20, 20)):
         super(Tail, self).__init__()
+        self.size = size
         self.surf = pygame.Surface(size)
-        self.surf.fill(THECOLORS.get("green"))
         self.rect = self.surf.get_rect()
         self.rect.topleft = position
 
+        self.direction = direction
 
-    def update(self, x, y) -> None:
+    def old_update(self, x, y) -> None:
         self.rect.move_ip(x, y)
+
+    def update(self):
+        if self.direction == Direction.UP:
+            self.rect.move_ip(0, -self.size[1])
+        elif self.direction == Direction.RIGHT:
+            self.rect.move_ip(self.size[0], 0)
+        elif self.direction == Direction.DOWN:
+            self.rect.move_ip(0, self.size[1])
+        elif self.direction == Direction.LEFT:
+            self.rect.move_ip(-self.size[0], 0)
 
     def make_surf(self, top=True, right=True, bottom=True, left=True):
         self.surf.fill(THECOLORS.get("green"))

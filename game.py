@@ -220,11 +220,28 @@ class WithoutWall(Game):
             self.move(self.snake)
         for tail in self.snake.tails:
             self.move(tail)
-
+        self.snake.texture()
         if pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
             # Wenn die Snake gegen eine Wand trifft oder gegen ein Schwanzteil
             self.running = False
             self.dead()
+
+    def apple_logic(self):
+        collide_with_apple = False
+        sprite = self.snake.next_pos()
+        self.move(sprite)
+        if pygame.sprite.collide_rect(sprite, self.apple):
+            collide_with_apple = True
+            apple_position = get_apple_position(self.snake, self.settings.size, self.apple.rect.topleft)
+            self.apple.kill()  # Entfernt den Apfel von 'all_entities'
+            if apple_position is False:
+                # Spiel ist zu ende, der Spieler hat gewonnen
+                self.running = False
+                self.win()
+            self.apple = Apple(apple_position)
+            self.all_entities.add(self.apple)
+
+        self.snake.update(collide_with_apple, False)  # Bewegt den Spieler
 
     def move(self, obj):
         topleft = obj.rect.topleft
