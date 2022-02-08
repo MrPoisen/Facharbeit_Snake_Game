@@ -67,14 +67,14 @@ class Game:
 
             elif event.type == QUIT:
                 self.running = False
-                pygame.quit()
+                #pygame.quit()
 
     def apple_logic(self):
         collide_with_apple = False
         if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple):
             collide_with_apple = True
             apple_position = get_apple_position(self.snake, self.settings.size, self.apple.rect.topleft)
-            self.apple.kill()
+            self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.running = False
@@ -86,7 +86,7 @@ class Game:
 
     def snake_logic(self):
         if hits_wall(self.snake, self.settings.size) or pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
-            # Wenn die Snake gegen eine Wand trifft oder gegen ein Schwanzteil
+            # Wenn die Snake gegen eine Wand oder gegen ein Schwanzteil trifft
             self.running = False
             self.dead()
 
@@ -94,7 +94,7 @@ class Game:
         for i in range(self.settings.size[0]//TILE_SIZE[0]):
             for ii in range(self.settings.size[1]//TILE_SIZE[1]):
                 if (i % 2 == 0 and ii % 2 == 0) or (i % 2 != 0 and ii % 2 != 0):
-                    pygame.draw.rect(self.mainscreen, (30, 30, 30, 100), # Farbe ist ein dunkles Grau
+                    pygame.draw.rect(self.mainscreen, (30, 30, 30, 100),  # Farbe ist ein dunkles Grau
                                      pygame.Rect(i*TILE_SIZE[0], ii*TILE_SIZE[1], *TILE_SIZE))
                 else:
                     pygame.draw.rect(self.mainscreen, THECOLORS.get("black"),
@@ -102,18 +102,20 @@ class Game:
 
     def run(self) -> None:
         self.running = True
-        passed_frames = 0  # time till next move
+        passed_time = 0  # time till next move
         while self.running:
             dt = self.clock.tick(self.settings.fps)
-            passed_frames += dt
+            passed_time += dt
 
             self.events()
 
             # Die Richtung, in die sich die Schlange bewegen soll, kann jederzeit geändert werden
             self.snake.accept_direction(pygame.key.get_pressed())
 
-            if passed_frames >= (1000/self.settings.snakespeed):
-                passed_frames = 0
+            if passed_time >= (1000/self.settings.snakespeed):
+                # Wenn die vergangene Zeit größer ist als 1000 durch Wie oft die Schlange sich pro sekunde Bewegen soll
+                # durch '1000/' werden die Sekunden der snakespeed in millisekunden umgewandet
+                passed_time = 0
                 self.apple_logic()
                 self.snake_logic()
 
@@ -202,13 +204,15 @@ class HeadSwitch(Game):
             self.apple = Apple(apple_position)
             self.all_entities.add(self.apple)
 
-        self.snake.update(collide_with_apple)
+        self.snake.update(collide_with_apple, False)
         if collide_with_apple:
-            tail_to_switch = self.snake.tails[-1]
+            tail_to_switch = self.snake.tails.pop()
             self.snake.rect, tail_to_switch.rect = tail_to_switch.rect, self.snake.rect  # Positionen werden getauscht
             self.snake.tails.reverse()  # Sollte so funktionieren
+            self.snake.tails.append(tail_to_switch)
 
             self.snake.update_direction()  # Richtung der Schlange wird angepasst
+        self.snake.texture()
 
 class WithoutWall(Game):
     def snake_logic(self):
@@ -224,21 +228,25 @@ class WithoutWall(Game):
 
     def move(self, obj):
         topleft = obj.rect.topleft
-        if topleft.x < 0:
-            obj.rect.topleft = (self.settings.size[0]-TILE_SIZE[0], topleft.y)
-        elif topleft.x >= self.settings.size[0]:
-            obj.rect.topleft = (0, topleft.y)
-        elif topleft.y < 0:
-            obj.rect.topleft = (topleft.x, self.settings.size[1]-TILE_SIZE[1])
-        elif topleft.y >= self.settings.size[1]:
-            obj.rect.topleft = (topleft.x, 0)
+        if topleft[0] < 0:
+            obj.rect.topleft = (self.settings.size[0]-TILE_SIZE[0], topleft[1])
+        elif topleft[0] >= self.settings.size[0]:
+            obj.rect.topleft = (0, topleft[1])
+        elif topleft[1] < 0:
+            obj.rect.topleft = (topleft[0], self.settings.size[1]-TILE_SIZE[1])
+        elif topleft[1] >= self.settings.size[1]:
+            obj.rect.topleft = (topleft[0], 0)
 
 def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_topleft=None) -> Union[tuple, bool]:
+    """
+    Die Funktion gibt eine zufällige, freie Position für den Apfel zurück.
+    Das Argument 'old_apple_topleft' wird genutzt, damit der Apfel nicht erneut an derselben Stelle auftaucht
+    """
     number_of_possible_positions = (size[0] // TILE_SIZE[0]) * (size[1] // TILE_SIZE[1])
     if 1 + len(snake.tails) >= number_of_possible_positions:
         return False
 
-    # generate all possible positions
+    # Hier werden alle bereits Verwendeten Positionen in einem Set gespeichert
     used_positions = set()
     used_positions.add(snake.rect.topleft)  # use topleft as position
     if old_apple_topleft is not None: used_positions.add(old_apple_topleft)

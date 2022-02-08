@@ -91,7 +91,7 @@ class SnakeHead(pygame.sprite.Sprite):
         if pressed_keys[K_RIGHT] and self._lastdirection != Direction.LEFT:
             self.direction = Direction.RIGHT
 
-    def update(self, collide_with_apple: bool = False, move_value: int = 20) -> None:
+    def update(self, collide_with_apple: bool = False, texture: bool = True, move_value: int = 20) -> None:
         self._lastdirection = self.direction  # verhindert illegale Bewegung
         old_topleft = self.rect.topleft
 
@@ -125,6 +125,11 @@ class SnakeHead(pygame.sprite.Sprite):
                 old_topleft = tail.rect.topleft
 
                 tail.update(x, y)  # new topleft
+
+        if texture:
+            self.texture()
+
+    def texture(self):
         # Für die richtige Darstellung
         if len(self.tails) == 0:
             self.make_surf()
@@ -166,7 +171,7 @@ class SnakeHead(pygame.sprite.Sprite):
                 top = False
             elif tail.rect.topleft[1] < self.tails[one_index].rect.topleft[1]:
                 bottom = False
-            if one_index+2 < len(self.tails):
+            if one_index + 2 < len(self.tails):
                 if tail.rect.topleft[0] < self.tails[one_index + 2].rect.topleft[0]:
                     right = False
                 elif tail.rect.topleft[0] > self.tails[one_index + 2].rect.topleft[0]:
@@ -198,7 +203,6 @@ class SnakeHead(pygame.sprite.Sprite):
             self._lastdirection = Direction.invert(Direction.DOWN)
 
 class Tail(pygame.sprite.Sprite):
-    #outline = outline
     def __init__(self, position: tuple, size: tuple = (20, 20)):
         super(Tail, self).__init__()
         self.surf = pygame.Surface(size)

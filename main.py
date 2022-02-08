@@ -16,12 +16,15 @@ TILE_SIZE = (20, 20)
 
 class MainMenu:
     def __init__(self, settings: Settings = None):
+        # Pygame initialisieren
         pygame.init()
         pygame.font.init()
 
+        # Einstellungen
         if settings is None:
             settings = Settings(autosave=True)
         self.settings = settings
+
         pygame.display.set_caption("Snake")
 
         self.clock = pygame.time.Clock()
@@ -44,6 +47,7 @@ class MainMenu:
             container=main_plane,
             visible=0)
         self.ui_elements["settings"] = settings
+
         start = pygame_gui.elements.UIButton(
             relative_rect=center_object(pygame.Rect(200, 100, 200, 50), center_y=False),
             text="Start",
@@ -51,6 +55,7 @@ class MainMenu:
             container=main_plane,
             visible=0)
         self.ui_elements["start"] = start
+
         snake_title_text = pygame_gui.elements.UITextBox("<b>Snake Game<b>",
                                                          center_object(pygame.Rect(220, 40, 100, -1),
                                                                                      center_y=False, offset_x=50),
@@ -86,7 +91,6 @@ class MainMenu:
         snakespeed_input.set_text(str(self.settings.snakespeed))
         self.ui_elements["snakespeed_input"] = snakespeed_input
         self.ui_elements["snakespeed_label"] = snakespeed_label
-        #TODO
 
         # Oberfläche für die Spielgröße
         size_text_rect = pygame.Rect(200, 203, 150, 50)
@@ -96,7 +100,7 @@ class MainMenu:
                                                                                       size_inputfiled1_rect,
                                                                                       size_inputfiled2_rect,
                                                                                       center_y=250)
-        # Gamemode
+        # Spielmodus
         gamemode_current_rect = pygame.Rect(200, 100, 200, 50)
         gamemode_selection_rect = pygame.Rect(200, 100, 150, 66)
         gamemode_current_rect, gamemode_selection_rect = center_objects(gamemode_current_rect, gamemode_selection_rect, center_y=150)
@@ -117,12 +121,12 @@ class MainMenu:
         self.ui_elements["gamesize_textbox"] = gamesize_textbox
 
         gamesize_inputbox1 = pygame_gui.elements.UITextEntryLine(size_inputfiled1_rect, self.ui_manager,
-                                                                 container=settings_plane)
+                                                                 settings_plane)
         gamesize_inputbox1.set_text(str(self.settings.size[0]))
         self.ui_elements["gamesize_inputbox1"] = gamesize_inputbox1
 
         gamesize_inputbox2 = pygame_gui.elements.UITextEntryLine(size_inputfiled2_rect, self.ui_manager,
-                                                                 container=settings_plane)
+                                                                 settings_plane)
         gamesize_inputbox2.set_text(str(self.settings.size[1]))
         self.ui_elements["gamesize_inputbox2"] = gamesize_inputbox2
 
@@ -131,21 +135,16 @@ class MainMenu:
         quit_rect = pygame.Rect(400, 300, 150, 50)
         save_rect, quit_rect = center_objects(save_rect, quit_rect, center_y=350)  # center objects
 
-        save = pygame_gui.elements.UIButton(relative_rect=save_rect,
-                                            text="Speichern",
-                                            manager=self.ui_manager,
-                                            container=settings_plane)
+        save = pygame_gui.elements.UIButton(save_rect, "Speichern", self.ui_manager, settings_plane)
         self.ui_elements["save"] = save
-        quit_settings = pygame_gui.elements.UIButton(relative_rect=quit_rect,
-                                                     text="Schließen",
-                                                     manager=self.ui_manager,
-                                                     container=settings_plane)
+        quit_settings = pygame_gui.elements.UIButton(quit_rect, "Schließen", self.ui_manager, settings_plane)
         self.ui_elements["quit_settings"] = quit_settings
 
     def setup_ui(self):
-        game_config = self.settings.content
+        # Die Elemente der Benutzeroberfläche werden in einem Dictonary gespeichert um mit weniger Variablen
+        # umzugehen zu müssen
         self.ui_elements = {}
-        self.ui_manager = pygame_gui.ui_manager.UIManager(MAINSCREEN_SIZE, "Facharbeit_Snake_Game/gametheme.json")
+        self.ui_manager = pygame_gui.ui_manager.UIManager(MAINSCREEN_SIZE, "gametheme.json")
 
         # Fonts laden
         self.ui_manager.preload_fonts([{'name': 'fira_code', 'point_size': 14, 'style': 'bold'}])
@@ -160,26 +159,26 @@ class MainMenu:
     def events(self):
         for event in pygame.event.get():
 
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT:  # Fenster soll geschlossen werden
                 self.running = False
 
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
 
-                if event.ui_element == self.ui_elements.get("start"):
+                if event.ui_element == self.ui_elements.get("start"):  # Startknopf wurde gedrückt
                     self.screen = game.run(self.settings, MAINSCREEN_SIZE)
 
-                elif event.ui_element == self.ui_elements.get("main_close_button"):
+                elif event.ui_element == self.ui_elements.get("main_close_button"):  # Schließenknopf wurde gedrückt
                     self.running = False
 
-                elif event.ui_element == self.ui_elements.get("settings"):
+                elif event.ui_element == self.ui_elements.get("settings"):  # Einstellungsknopf wurde gedrückt
                     self.ui_elements.get("settings_plane").show()
                     self.ui_elements.get("main_plane").hide()
 
-                elif event.ui_element == self.ui_elements.get("quit_settings"):
+                elif event.ui_element == self.ui_elements.get("quit_settings"): # Einstellungen-Verlassen-Knopf wurde gedrückt
                     self.ui_elements.get("settings_plane").hide()
                     self.ui_elements.get("main_plane").show()
 
-                elif event.ui_element == self.ui_elements.get("save"):
+                elif event.ui_element == self.ui_elements.get("save"): # Einstellungen-Speichern-Knopf wurde gedrückt
                     self.save()
 
             self.ui_manager.process_events(event)
@@ -189,22 +188,24 @@ class MainMenu:
 
         self.running = True
         while self.running:
+            # gibt die sogenannte 'Deltatime' zurück
+            # /1000 damit man die Sekunden hat
             deltatime = self.clock.tick(self.settings.fps) / 1000
-            # handle events
+
             self.events()
 
             self.ui_manager.update(deltatime)
             self.ui_manager.draw_ui(self.screen)
 
-            pygame.display.update()
-            # pygame.display.flip()
+            # Aktualisiert den Bildschirm
+            pygame.display.flip()
 
     def save(self) -> None:
 
-        # size
+        # Spielfeldgröße
         width = int(self.ui_elements.get("gamesize_inputbox1").get_text())
         height = int(self.ui_elements.get("gamesize_inputbox2").get_text())
-        if width % TILE_SIZE[0] != 0 or height % TILE_SIZE[1]:  # if width or height doesn't fit the Tilesize
+        if width % TILE_SIZE[0] != 0 or height % TILE_SIZE[1]:  # Wenn die eingegebene Größe nicht passt
             self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0]))
             self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1]))
             pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 100, 100), resulution=self.settings.size), "Invalid Gamesize", self.ui_manager)
@@ -225,8 +226,9 @@ class MainMenu:
             speed = float(speed)
         except ValueError:
             self.ui_elements.get("snakespeed_input").set_text(str(self.settings.snakespeed))
-
-        self.settings.snakespeed = speed
+        else:
+            # Wird ausgeführt wenn es keinen Error gibt
+            self.settings.snakespeed = speed
 
 def center(object_, resolution: Tuple[int, int] = MAINSCREEN_SIZE):
     object_width = object_.width if hasattr(object_, "width") else object_.get_width()
@@ -263,7 +265,7 @@ def center_objects(*objects, center_x: Union[bool, int] = True, center_y: Union[
             if index == 0:
                 obj.topleft = (space_value_x, obj.topleft[1])
             else:
-                obj.topleft = (objects[index-1].topleft[0] + objects[index-1].width + space_value_x , obj.topleft[1])
+                obj.topleft = (objects[index-1].topleft[0] + objects[index-1].width + space_value_x, obj.topleft[1])
 
     elif isinstance(center_x, int):
 
@@ -296,6 +298,9 @@ def resize(size, surface=None) -> pygame.Surface:
     return screen
 
 def map_gamemode(name: str) -> str:
+    """
+    Gibt zu dem Spielmodus-Namen den passende bezeichnung in den Einstellungen zurück und vise versa
+    """
     sett_to_name = {"default": "Normal", "no_walls": "Wandlos", "switching_head": "Kopftausch"}
     name_to_sett = {"Normal": "default", "Wandlos": "no_walls", "Kopftausch": "switching_head"}
     if name in sett_to_name.keys():
@@ -304,6 +309,7 @@ def map_gamemode(name: str) -> str:
         return name_to_sett.get(name)
     else:
         raise Exception("gave a wrong name")
+
 if __name__ == "__main__":
-    MainMenu().run()
+    MainMenu().run() # startet das Programm
     # main()
