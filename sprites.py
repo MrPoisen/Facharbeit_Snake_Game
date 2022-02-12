@@ -5,6 +5,10 @@ from pygame.locals import (
     K_DOWN,
     K_LEFT,
     K_RIGHT,
+    K_w,
+    K_s,
+    K_a,
+    K_d
   )
 
 from typing import List, Tuple, Dict
@@ -89,13 +93,13 @@ class SnakeHead(pygame.sprite.Sprite):
         self.surf.blit(self.img, pygame.Rect(1,1,18,18))
 
     def accept_direction(self, pressed_keys):
-        if pressed_keys[K_UP] and self._lastdirection != Direction.DOWN:
+        if (pressed_keys[K_UP] or pressed_keys[K_w]) and self._lastdirection != Direction.DOWN:
             self.direction = Direction.UP
-        if pressed_keys[K_DOWN] and self._lastdirection != Direction.UP:
+        if (pressed_keys[K_DOWN] or pressed_keys[K_s]) and self._lastdirection != Direction.UP:
             self.direction = Direction.DOWN
-        if pressed_keys[K_LEFT] and self._lastdirection != Direction.RIGHT:
+        if (pressed_keys[K_LEFT] or pressed_keys[K_a]) and self._lastdirection != Direction.RIGHT:
             self.direction = Direction.LEFT
-        if pressed_keys[K_RIGHT] and self._lastdirection != Direction.LEFT:
+        if (pressed_keys[K_RIGHT] or pressed_keys[K_d]) and self._lastdirection != Direction.LEFT:
             self.direction = Direction.RIGHT
 
     def update(self, collide_with_apple: bool = False, texture: bool = True, move_value: int = 20) -> None:
@@ -124,7 +128,7 @@ class SnakeHead(pygame.sprite.Sprite):
         if texture:
             self.texture()
 
-    def texture(self, relocated: Settings = None):
+    def texture(self, settings: Settings = None):
         # Für die richtige Darstellung
         if len(self.tails) == 0:
             self.make_surf()
@@ -169,17 +173,17 @@ class SnakeHead(pygame.sprite.Sprite):
                 elif tail.rect.topleft[1] + TILE_SIZE[1] == tails[one_index + 1].rect.topleft[1]:
                     bottom = False
 
-            if relocated is not None:
+            if settings is not None:
                 if (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[0] == 0:
                     left = False
-                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[0] == relocated.size[0]-TILE_SIZE[0]:
+                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[0] == settings.size[0]-TILE_SIZE[0]:
                     right = False
                 elif (tail.direction is Direction.UP or tail.direction is Direction.DOWN) and tail.rect.topleft[1] == 0:
                     top = False
-                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[1] == relocated.size[1]-TILE_SIZE[1]:
+                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[1] == settings.size[1]-TILE_SIZE[1]:
                     bottom = False
 
-            print(f"index: {one_index}, Tail {tail.rect.topleft}, pretail: {tails[one_index-1].rect.topleft}; make_surf: {top, right, bottom, left}")
+
             tail.make_surf(top, right, bottom, left)
 
     def add_tail(self, tail):

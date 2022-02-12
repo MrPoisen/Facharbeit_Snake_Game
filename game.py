@@ -166,8 +166,13 @@ class Game:
     def dead(self):
         wait = True
         # texts
-        pause_text1 = FONT.render('Du bist Tot', False, THECOLORS.get("white"))
+        pause_text1 = FONT.render(f'Du hast {len(self.snake.tails)} Punkte erreicht', False, THECOLORS.get("white"))
         pause_text2 = FONT.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+
+        grey_surf = pygame.Surface(self.settings.size)
+        grey_surf.fill((20, 20, 20, 180))
+        grey_surf.set_alpha(180)
+        self.mainscreen.blit(grey_surf, grey_surf.get_rect())
 
         # text1
         pause_text1_centerpos = center(pause_text1, self.settings.size)
@@ -178,6 +183,7 @@ class Game:
         pause_text2_centerpos = (pause_text2_centerpos[0], pause_text2_centerpos[1] + pause_text2.get_height() + 20)  # 20: space beetween the texts
         self.mainscreen.blit(pause_text2, pause_text2_centerpos)
 
+        
         pygame.display.flip()
         while wait:
             for event in pygame.event.get():
