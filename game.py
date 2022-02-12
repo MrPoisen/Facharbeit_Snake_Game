@@ -39,7 +39,7 @@ class Game:
         # Spiel/Spielstand
         self.clock = pygame.time.Clock()
         self.running = False
-        self.passed_frames = 0
+        self.quit = False
 
         # Spieler
         self.snake = SnakeHead()
@@ -67,6 +67,7 @@ class Game:
 
             elif event.type == QUIT:
                 self.running = False
+                self.quit = True
                 #pygame.quit()
 
     def apple_logic(self):
@@ -103,6 +104,12 @@ class Game:
     def run(self) -> None:
         self.running = True
         passed_time = 0  # time till next move
+
+        self.blit_background()
+        for entity in self.all_entities:
+            self.mainscreen.blit(entity.surf, entity.rect)
+        pygame.display.flip()
+
         while self.running:
             dt = self.clock.tick(self.settings.fps)
             passed_time += dt
@@ -114,16 +121,16 @@ class Game:
 
             if passed_time >= (1000/self.settings.snakespeed):
                 # Wenn die vergangene Zeit größer ist als 1000 durch Wie oft die Schlange sich pro sekunde Bewegen soll
-                # durch '1000/' werden die Sekunden der snakespeed in millisekunden umgewandet
+                # durch '1000/' werden die Sekunden der snakespeed in millisekunden umgerechnet
                 passed_time = 0
                 self.apple_logic()
                 self.snake_logic()
 
-            self.blit_background()
-            for entity in self.all_entities:
-                self.mainscreen.blit(entity.surf, entity.rect)
+                self.blit_background()
+                for entity in self.all_entities:
+                    self.mainscreen.blit(entity.surf, entity.rect)
 
-            pygame.display.flip()
+                pygame.display.flip()
 
     def pause(self):
         wait = True
@@ -216,16 +223,11 @@ class HeadSwitch(Game):
 
 class WithoutWall(Game):
     def snake_logic(self):
-        relocated = {}
-        if hits_wall(self.snake, self.settings.size):
-            self.move(self.snake)
+        self.move(self.snake)
         for tail in self.snake.tails:
-            prepos = tail.rect.topleft
             self.move(tail)
-            if tail.rect.topleft != prepos:
-                relocated[tail] = prepos
 
-        self.snake.texture((relocated, self.settings))
+        self.snake.texture(self.settings)
         if pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
             # Wenn die Snake gegen eine Wand trifft oder gegen ein Schwanzteil
             self.running = False

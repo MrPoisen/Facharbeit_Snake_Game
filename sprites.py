@@ -11,7 +11,10 @@ from typing import List, Tuple, Dict
 from enum import Enum, auto
 
 from settings import Settings
+from main import TILE_SIZE
 
+MAINCOLOR = THECOLORS.get("darkgreen")
+EDGECOLOR = THECOLORS.get("green")
 
 class Direction(Enum):
     UP = auto()
@@ -45,6 +48,7 @@ class SnakeHead(pygame.sprite.Sprite):
     def __init__(self, size: tuple = (20, 20)):
         super(SnakeHead, self).__init__()
         self.surf = pygame.Surface(size)
+        self.img = pygame.image.load("snakehead.png")
 
         self.rect = self.surf.get_rect()
         self.direction = Direction.RIGHT
@@ -72,15 +76,17 @@ class SnakeHead(pygame.sprite.Sprite):
         return sprite
 
     def make_surf(self, top=True, right=True, bottom=True, left=True):
-        self.surf.fill(THECOLORS.get("green"))
+        self.surf.fill(MAINCOLOR)
         if top:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (19, 0))
+            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (TILE_SIZE[0]-1, 0))
         if right:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (19, 0), (19, 19))
+            pygame.draw.line(self.surf, EDGECOLOR, (TILE_SIZE[0]-1, 0), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
         if bottom:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 19), (19, 19))
+            pygame.draw.line(self.surf, EDGECOLOR, (0, TILE_SIZE[1]-1), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
         if left:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (0, 19))
+            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1))
+
+        self.surf.blit(self.img, pygame.Rect(1,1,18,18))
 
     def accept_direction(self, pressed_keys):
         if pressed_keys[K_UP] and self._lastdirection != Direction.DOWN:
@@ -118,7 +124,7 @@ class SnakeHead(pygame.sprite.Sprite):
         if texture:
             self.texture()
 
-    def texture(self, relocated: Tuple[Dict["Tail", tuple], Settings] = None):
+    def texture(self, relocated: Settings = None):
         # Für die richtige Darstellung
         if len(self.tails) == 0:
             self.make_surf()
@@ -141,34 +147,39 @@ class SnakeHead(pygame.sprite.Sprite):
         if not len(self.tails) > 1:
             self.tails[0].make_surf(top, right, bottom, left)
             return
-        if self.tails[0].rect.topleft[0] < self.tails[1].rect.topleft[0]:
-            right = False
-        elif self.tails[0].rect.topleft[0] > self.tails[1].rect.topleft[0]:
-            left = False
-        elif self.tails[0].rect.topleft[1] < self.tails[1].rect.topleft[1]:
-            bottom = False
-        elif self.tails[0].rect.topleft[1] > self.tails[1].rect.topleft[1]:
-            top = False
-        self.tails[0].make_surf(top, right, bottom, left)
-        for one_index, tail in enumerate(self.tails[1:], 1):
+
+        tails = [self, *self.tails]
+        for one_index, tail in enumerate(tails[1:], 1):
             top = bottom = left = right = True
-            if tail.rect.topleft[0] > self.tails[one_index - 1].rect.topleft[0] or (relocated is not None and tail in relocated[0].keys() and relocated[0].get(tail)[0] >= relocated[1].size[0]):
+            if (tail.rect.topleft[0] - TILE_SIZE[0] == tails[one_index - 1].rect.topleft[0]):
                 left = False
-            elif tail.rect.topleft[0] < self.tails[one_index - 1].rect.topleft[0] or (relocated is not None and tail in relocated[0].keys() and relocated[0].get(tail)[0] < 0):
+            elif (tail.rect.topleft[0] + TILE_SIZE[0] == tails[one_index - 1].rect.topleft[0]):
                 right = False
-            elif tail.rect.topleft[1] > self.tails[one_index - 1].rect.topleft[1] or (relocated is not None and tail in relocated[0].keys() and relocated[0].get(tail)[1] >= relocated[1].size[1]):
+            elif (tail.rect.topleft[1] - TILE_SIZE[1] == tails[one_index - 1].rect.topleft[1]):
                 top = False
-            elif tail.rect.topleft[1] < self.tails[one_index - 1].rect.topleft[1] or (relocated is not None and tail in relocated[0].keys() and relocated[0].get(tail)[1] < 0):
+            elif (tail.rect.topleft[1] + TILE_SIZE[1] == tails[one_index - 1].rect.topleft[1]):
                 bottom = False
-            if one_index + 1 < len(self.tails):
-                if tail.rect.topleft[0] < self.tails[one_index + 1].rect.topleft[0]:
-                    right = False
-                elif tail.rect.topleft[0] > self.tails[one_index + 1].rect.topleft[0]:
+            if one_index + 1 < len(tails):
+                if tail.rect.topleft[0] - TILE_SIZE[0] == tails[one_index + 1].rect.topleft[0]:
                     left = False
-                elif tail.rect.topleft[1] < self.tails[one_index + 1].rect.topleft[1]:
-                    bottom = False
-                elif tail.rect.topleft[1] > self.tails[one_index + 1].rect.topleft[1]:
+                elif tail.rect.topleft[0] + TILE_SIZE[0] ==  tails[one_index + 1].rect.topleft[0]:
+                    right = False
+                elif tail.rect.topleft[1] - TILE_SIZE[1] == tails[one_index + 1].rect.topleft[1]:
                     top = False
+                elif tail.rect.topleft[1] + TILE_SIZE[1] == tails[one_index + 1].rect.topleft[1]:
+                    bottom = False
+
+            if relocated is not None:
+                if (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[0] == 0:
+                    left = False
+                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[0] == relocated.size[0]-TILE_SIZE[0]:
+                    right = False
+                elif (tail.direction is Direction.UP or tail.direction is Direction.DOWN) and tail.rect.topleft[1] == 0:
+                    top = False
+                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[1] == relocated.size[1]-TILE_SIZE[1]:
+                    bottom = False
+
+            print(f"index: {one_index}, Tail {tail.rect.topleft}, pretail: {tails[one_index-1].rect.topleft}; make_surf: {top, right, bottom, left}")
             tail.make_surf(top, right, bottom, left)
 
     def add_tail(self, tail):
@@ -201,9 +212,6 @@ class Tail(pygame.sprite.Sprite):
 
         self.direction = direction
 
-    def old_update(self, x, y) -> None:
-        self.rect.move_ip(x, y)
-
     def update(self):
         if self.direction == Direction.UP:
             self.rect.move_ip(0, -self.size[1])
@@ -215,12 +223,12 @@ class Tail(pygame.sprite.Sprite):
             self.rect.move_ip(-self.size[0], 0)
 
     def make_surf(self, top=True, right=True, bottom=True, left=True):
-        self.surf.fill(THECOLORS.get("green"))
+        self.surf.fill(MAINCOLOR)
         if top:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (19, 0))
+            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (TILE_SIZE[0]-1, 0))
         if right:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (19, 0), (19, 19))
+            pygame.draw.line(self.surf, EDGECOLOR, (TILE_SIZE[0]-1, 0), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
         if bottom:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 19), (19, 19))
+            pygame.draw.line(self.surf, EDGECOLOR, (0, TILE_SIZE[0]-1), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
         if left:
-            pygame.draw.line(self.surf, THECOLORS.get("darkgreen"), (0, 0), (0, 19))
+            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1))
