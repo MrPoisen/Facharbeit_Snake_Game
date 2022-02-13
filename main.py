@@ -165,7 +165,11 @@ class MainMenu:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
 
                 if event.ui_element == self.ui_elements.get("start"):  # Startknopf wurde gedrückt
-                    self.screen = game.run(self.settings, MAINSCREEN_SIZE)
+                    self.screen, quit_ = game.run(self.settings, MAINSCREEN_SIZE)
+                    if quit_ is True:
+                        self.running = False
+                        pygame.quit()
+                        exit(1)
 
                 elif event.ui_element == self.ui_elements.get("main_close_button"):  # Schließenknopf wurde gedrückt
                     self.running = False
@@ -199,6 +203,7 @@ class MainMenu:
 
             # Aktualisiert den Bildschirm
             pygame.display.flip()
+        pygame.quit()
 
     def save(self) -> None:
 

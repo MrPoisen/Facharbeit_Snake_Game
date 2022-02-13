@@ -159,9 +159,9 @@ class Game:
                         self.running = False
 
                 elif event.type == QUIT:
-                    self.running = False
                     wait = False
-                    pygame.quit()
+                    self.running = False
+                    self.quit = True
 
     def dead(self):
         wait = True
@@ -196,9 +196,9 @@ class Game:
                         self.running = False
 
                 elif event.type == QUIT:
-                    self.running = False
                     wait = False
-                    pygame.quit()
+                    self.running = False
+                    self.quit = True
 
     def win(self):
         pass
@@ -292,9 +292,10 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
 
     return random.choice(possible_positions)
 
-def run(settings: Settings, presize: Tuple[int, int]):
+def run(settings: Settings, presize: Tuple[int, int]) -> Tuple[pygame.Surface, bool]:
     GAMEMODES = {"default": Game, "no_walls": WithoutWall, "switching_head": HeadSwitch}
     game_class = GAMEMODES.get(settings.gamemode)
-    game_class(settings).run()
+    game = game_class(settings)
+    game.run()
     screen = resize(presize)
-    return screen
+    return screen, game.quit

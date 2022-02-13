@@ -11,7 +11,7 @@ from pygame.locals import (
     K_d
   )
 
-from typing import List, Tuple, Dict
+from typing import List
 from enum import Enum, auto
 
 from settings import Settings
