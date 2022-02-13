@@ -201,7 +201,41 @@ class Game:
                     self.quit = True
 
     def win(self):
-        pass
+        wait = True
+        # texts
+        pause_text1 = FONT.render(f'Du hast gewonnen!', False, THECOLORS.get("white"))
+        pause_text2 = FONT.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+
+        grey_surf = pygame.Surface(self.settings.size)
+        grey_surf.fill((20, 20, 20, 180))
+        grey_surf.set_alpha(180)
+        self.mainscreen.blit(grey_surf, grey_surf.get_rect())
+
+        # text1
+        pause_text1_centerpos = center(pause_text1, self.settings.size)
+        self.mainscreen.blit(pause_text1, pause_text1_centerpos)
+
+        # text2
+        pause_text2_centerpos = center(pause_text2, self.settings.size)
+        pause_text2_centerpos = (pause_text2_centerpos[0], pause_text2_centerpos[1] + pause_text2.get_height() + 20)  # 20: space beetween the texts
+        self.mainscreen.blit(pause_text2, pause_text2_centerpos)
+
+        
+        pygame.display.flip()
+        while wait:
+            for event in pygame.event.get():
+                if event.type == KEYDOWN:
+                    if event.key == K_ESCAPE:
+                        wait = False
+
+                    if event.key == K_BACKSPACE:
+                        wait = False
+                        self.running = False
+
+                elif event.type == QUIT:
+                    wait = False
+                    self.running = False
+                    self.quit = True
 
 class HeadSwitch(Game):
     def apple_logic(self):
@@ -272,10 +306,6 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
     Die Funktion gibt eine zufällige, freie Position für den Apfel zurück.
     Das Argument 'old_apple_topleft' wird genutzt, damit der Apfel nicht erneut an derselben Stelle auftaucht
     """
-    number_of_possible_positions = (size[0] // TILE_SIZE[0]) * (size[1] // TILE_SIZE[1])
-    if 1 + len(snake.tails) >= number_of_possible_positions:
-        return False
-
     # Hier werden alle bereits Verwendeten Positionen in einem Set gespeichert
     used_positions = set()
     used_positions.add(snake.rect.topleft)  # use topleft as position
@@ -289,7 +319,9 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
         for topleft_y in range(0, size[1], TILE_SIZE[1]):
             if (topleft_x, topleft_y) not in used_positions:
                 possible_positions.append((topleft_x, topleft_y))
-
+    if len(possible_positions) == 0:
+        return False
+    
     return random.choice(possible_positions)
 
 def run(settings: Settings, presize: Tuple[int, int]) -> Tuple[pygame.Surface, bool]:

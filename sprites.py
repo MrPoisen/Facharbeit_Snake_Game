@@ -59,7 +59,7 @@ class SnakeHead(pygame.sprite.Sprite):
         self._lastdirection = self.direction
         self.tails: List[Tail] = []
 
-        #
+        # Gruppen
         self.tail_group = None
         self.all_group = None
 
