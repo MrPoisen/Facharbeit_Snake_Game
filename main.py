@@ -9,10 +9,7 @@ from settings import Settings
 
 
 MAINSCREEN_SIZE = (800, 400)
-TILE_SIZE = (20, 20)
-# FPS = 60
-
-# STANDARD_GAME_SIZE = (800, 600)
+TILE_SIZE = (40, 40)
 
 class MainMenu:
     def __init__(self, settings: Settings = None):

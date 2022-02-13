@@ -42,8 +42,9 @@ class Game:
         self.quit = False
 
         # Spieler
-        self.snake = SnakeHead()
-        self.apple = Apple(get_apple_position(self.snake, self.settings.size))
+        self.snake = SnakeHead(TILE_SIZE)
+        self.snake.texture()
+        self.apple = Apple(get_apple_position(self.snake, self.settings.size), TILE_SIZE)
 
         # Spielobjekte
         self.all_entities = pygame.sprite.Group(self.apple, self.snake)
@@ -80,7 +81,7 @@ class Game:
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.running = False
                 self.win()
-            self.apple = Apple(apple_position)
+            self.apple = Apple(apple_position, TILE_SIZE)
             self.all_entities.add(self.apple)
 
         self.snake.update(collide_with_apple)  # Bewegt den Spieler
@@ -108,6 +109,8 @@ class Game:
         self.blit_background()
         for entity in self.all_entities:
             self.mainscreen.blit(entity.surf, entity.rect)
+            print(type(entity), entity.rect)
+            
         pygame.display.flip()
 
         while self.running:
@@ -248,7 +251,7 @@ class HeadSwitch(Game):
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.running = False
                 self.win()
-            self.apple = Apple(apple_position)
+            self.apple = Apple(apple_position, TILE_SIZE)
             self.all_entities.add(self.apple)
 
         self.snake.update(collide_with_apple, False)

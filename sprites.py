@@ -11,11 +11,11 @@ from pygame.locals import (
     K_d
   )
 
-from typing import List
+from typing import List, Tuple
 from enum import Enum, auto
 
 from settings import Settings
-from main import TILE_SIZE
+from main import TILE_SIZE, resize
 
 MAINCOLOR = THECOLORS.get("darkgreen")
 EDGECOLOR = THECOLORS.get("green")
@@ -52,9 +52,10 @@ class SnakeHead(pygame.sprite.Sprite):
     def __init__(self, size: tuple = (20, 20)):
         super(SnakeHead, self).__init__()
         self.surf = pygame.Surface(size)
-        self.img = pygame.image.load("snakehead.png")
+        self.img: pygame.Surface = pygame.image.load("snakehead.png")
+        self.img = resize((TILE_SIZE[0]-2, TILE_SIZE[1]-2), self.img)
 
-        self.rect = self.surf.get_rect()
+        self.rect = self.surf.get_rect(x=0, y=0)
         self.direction = Direction.RIGHT
         self._lastdirection = self.direction
         self.tails: List[Tail] = []
@@ -63,17 +64,17 @@ class SnakeHead(pygame.sprite.Sprite):
         self.tail_group = None
         self.all_group = None
 
-    def next_pos(self, move_value: int = 20):
+    def next_pos(self, move_value: Tuple[int, int] = (20, 20)):
         move_x = 0
         move_y = 0
         if self.direction == Direction.RIGHT:
-            move_x = move_value
+            move_x = move_value[0]
         elif self.direction == Direction.LEFT:
-            move_x = -move_value  # moves left
+            move_x = -move_value[0]  # moves left
         elif self.direction == Direction.UP:
-            move_y = -move_value
+            move_y = -move_value[1]
         elif self.direction == Direction.DOWN:
-            move_y = move_value  # moves Down
+            move_y = move_value[1]  # moves Down
 
         sprite = pygame.sprite.Sprite()
         sprite.rect = self.rect.move(move_x, move_y)
@@ -102,15 +103,15 @@ class SnakeHead(pygame.sprite.Sprite):
         if (pressed_keys[K_RIGHT] or pressed_keys[K_d]) and self._lastdirection != Direction.LEFT:
             self.direction = Direction.RIGHT
 
-    def update(self, collide_with_apple: bool = False, texture: bool = True, move_value: int = 20) -> None:
+    def update(self, collide_with_apple: bool = False, texture: bool = True) -> None:
         self._lastdirection = self.direction  # verhindert illegale Bewegung
         old_topleft = self.rect.topleft
 
-        next_pos_rect = self.next_pos(move_value).rect  # Bewegt 'rect'
+        next_pos_rect = self.next_pos(TILE_SIZE).rect  # Bewegt 'rect'
         self.rect.update(next_pos_rect.left, next_pos_rect.top, self.rect.width, self.rect.height)
 
         if collide_with_apple:  # adds tail on the position the head was on before
-            tail = Tail(old_topleft, self.direction)
+            tail = Tail(old_topleft, self.direction, TILE_SIZE)
             self.tails.insert(0, tail)
             self.tail_group.add(tail)
             self.all_group.add(tail)
