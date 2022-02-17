@@ -177,11 +177,11 @@ class SnakeHead(pygame.sprite.Sprite):
             if settings is not None:
                 if (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[0] == 0:
                     left = False
-                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[0] == settings.size[0]-TILE_SIZE[0]:
+                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0]:
                     right = False
                 elif (tail.direction is Direction.UP or tail.direction is Direction.DOWN) and tail.rect.topleft[1] == 0:
                     top = False
-                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[1] == settings.size[1]-TILE_SIZE[1]:
+                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and tail.rect.topleft[1] == settings.realsize[1]-TILE_SIZE[1]:
                     bottom = False
 
 
@@ -206,6 +206,20 @@ class SnakeHead(pygame.sprite.Sprite):
         elif snake_rect.y < next_taile_rect.y:
             self.direction = Direction.UP
             self._lastdirection = Direction.invert(Direction.DOWN)
+
+        old_topleft = self.rect.topleft
+        for index, tail in enumerate(self.tails):
+            if old_topleft[0] > tail.rect.topleft[0]:  # block before is more right
+                tail.direction = Direction.RIGHT
+            elif old_topleft[0] < tail.rect.topleft[0]:
+                tail.direction = Direction.LEFT
+            elif old_topleft[1] > tail.rect.topleft[1]:  # block before is more down
+                tail.direction = Direction.DOWN
+            else:
+                tail.direction = Direction.UP
+            old_topleft = tail.rect.topleft
+
+
 
 class Tail(pygame.sprite.Sprite):
     def __init__(self, position: tuple, direction: Direction, size: tuple = (20, 20)):

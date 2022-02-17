@@ -38,12 +38,12 @@ class Settings:
     def size(self) -> Tuple[int, int]:
         return tuple(self.content.get("size"))
 
+    @property
+    def realsize(self) -> Tuple[int, int]:
+        return self.content.get("size")[0]*self.tilesize[0], self.content.get("size")[1]*self.tilesize[1]
+
     @size.setter
     def size(self, size: Union[Tuple[int, int], List[int]]):
-        if size[0] % self.tilesize[0] != 0 or size[1] % self.tilesize[1]:  # if width or height doesn't fit the Tilesize
-            # raise Exception("HEY, WRONG SIZE")
-            print("WRONG SIZE")
-            return
         self.content["size"] = size
         if self.autosave:
             self.save()

@@ -7,9 +7,8 @@ import pygame_gui
 import game
 from settings import Settings
 
-
 MAINSCREEN_SIZE = (800, 400)
-TILE_SIZE = (40, 40)
+TILE_SIZE = (20, 20)
 
 class MainMenu:
     def __init__(self, settings: Settings = None):
@@ -19,7 +18,7 @@ class MainMenu:
 
         # Einstellungen
         if settings is None:
-            settings = Settings(autosave=True)
+            settings = Settings(tilesize=TILE_SIZE, autosave=True)
         self.settings = settings
 
         pygame.display.set_caption("Snake")
@@ -207,7 +206,7 @@ class MainMenu:
         # Spielfeldgröße
         width = int(self.ui_elements.get("gamesize_inputbox1").get_text())
         height = int(self.ui_elements.get("gamesize_inputbox2").get_text())
-        if width % TILE_SIZE[0] != 0 or height % TILE_SIZE[1]:  # Wenn die eingegebene Größe nicht passt
+        if width < 4 or height < 4:
             self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0]))
             self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1]))
             pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 100, 100), resulution=self.settings.size), "Invalid Gamesize", self.ui_manager)
@@ -242,6 +241,9 @@ def center(object_, resolution: Tuple[int, int] = MAINSCREEN_SIZE):
 
 def center_object(object_, center_x=True, center_y = True, resulution: Tuple[int, int] = MAINSCREEN_SIZE,
                   offset_x:int = 0, offset_y: int = 0):
+    """
+    Funktioniert identisch zu 'center' mit dem Unterschied, das es mehr optionen gibt
+    """
     topleft = object_.topleft
     positions = center(object_, resulution)
     positions[0] += offset_x
@@ -257,11 +259,11 @@ def center_object(object_, center_x=True, center_y = True, resulution: Tuple[int
 
 def center_objects(*objects, center_x: Union[bool, int] = True, center_y: Union[bool, int] = False, resolution: Tuple[int, int] = MAINSCREEN_SIZE):
     if center_x is True:
-        free_size_x = resolution[0]
+        free_size_x = resolution[0]  # Platz der auf der x-Achse frei ist
         for obj in objects:
             free_size_x -= obj.width
 
-        space_value_x = free_size_x // (len(objects) + 1)
+        space_value_x = free_size_x // (len(objects) + 1) # Platz zwischen jedem Objekt auf der x-Achse
 
         for index, obj in enumerate(objects):
             if index == 0:
@@ -269,17 +271,17 @@ def center_objects(*objects, center_x: Union[bool, int] = True, center_y: Union[
             else:
                 obj.topleft = (objects[index-1].topleft[0] + objects[index-1].width + space_value_x, obj.topleft[1])
 
-    elif isinstance(center_x, int):
+    elif isinstance(center_x, int): # Der Mittelpunkt der Objekte wird auf der x-Achse zu'center_x' gesetzt
 
         for index, obj in enumerate(objects):
             obj.topleft = (center_x - obj.width // 2, obj.topleft[1])
 
     if center_y is True:
-        free_size_y = resolution[1]
+        free_size_y = resolution[1] # Platz der auf der y-Achse frei ist
         for obj in objects:
             free_size_y -= obj.height
 
-        space_value_y = free_size_y // (len(objects) + 1)
+        space_value_y = free_size_y // (len(objects) + 1) # Platz zwischen jedem Objekt auf der y-Achse
 
         for index, obj in enumerate(objects):
             if index == 0:
@@ -287,14 +289,14 @@ def center_objects(*objects, center_x: Union[bool, int] = True, center_y: Union[
             else:
                 obj.topleft = (obj.topleft[0], objects[index-1].topleft[1] + objects[index-1].height + space_value_y)
 
-    elif isinstance(center_y, (int, float)):
+    elif isinstance(center_y, (int, float)): # Der Mittelpunkt der Objekte wird auf der y-Achse zu'center_y' gesetzt
         for index, obj in enumerate(objects):
             obj.topleft = (obj.topleft[0], center_y - obj.height//2)
     return objects
 
 def resize(size, surface=None) -> pygame.Surface:
     if surface is None:
-        screen = pygame.display.set_mode(size)
+        screen = pygame.display.set_mode(size) # gibt ein pygame.Surface zurück, welches das Spielfenster darstellt
     else:
         screen = pygame.transform.scale(surface, size)
     return screen

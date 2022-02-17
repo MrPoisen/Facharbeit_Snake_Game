@@ -4,18 +4,18 @@ from pygame.locals import (
     KEYDOWN,
     QUIT,
     K_BACKSPACE
-)
+) # Tastenevents
 from pygame.color import THECOLORS
 
 from typing import Union, Tuple
 import random
 
+# eigene Module
 from main import resize, center, TILE_SIZE
 from sprites import SnakeHead, Apple, Tail
 from settings import Settings
 
-# TILE_SIZE = (20, 20)
-pygame.font.init()
+pygame.font.init() # Aufrufen, falls pygame noch nicht initialisiert ist
 FONT = pygame.font.SysFont('Calibri', 30)
 
 def hits_wall(obj: Union[SnakeHead, Tail], size: Tuple[int, int]):
@@ -44,7 +44,7 @@ class Game:
         # Spieler
         self.snake = SnakeHead(TILE_SIZE)
         self.snake.texture()
-        self.apple = Apple(get_apple_position(self.snake, self.settings.size), TILE_SIZE)
+        self.apple = Apple(get_apple_position(self.snake, self.settings.realsize), TILE_SIZE)
 
         # Spielobjekte
         self.all_entities = pygame.sprite.Group(self.apple, self.snake)
@@ -54,13 +54,13 @@ class Game:
         self.snake.tail_group = self.tails
         self.snake.all_group = self.all_entities
 
-        self.mainscreen = resize(self.settings.size)
+        self.mainscreen = resize(self.settings.realsize)
 
     def events(self):
         for event in pygame.event.get():
 
             if event.type == KEYDOWN:
-                if event.key == K_BACKSPACE:  # Spiel beenden
+                if event.key == K_BACKSPACE:  # Spiel beenden und zum Hauptmenü
                     self.running = False
 
                 if event.key == K_ESCAPE:
@@ -69,13 +69,12 @@ class Game:
             elif event.type == QUIT:
                 self.running = False
                 self.quit = True
-                #pygame.quit()
 
     def apple_logic(self):
         collide_with_apple = False
         if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple):
             collide_with_apple = True
-            apple_position = get_apple_position(self.snake, self.settings.size, self.apple.rect.topleft)
+            apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
@@ -87,14 +86,14 @@ class Game:
         self.snake.update(collide_with_apple)  # Bewegt den Spieler
 
     def snake_logic(self):
-        if hits_wall(self.snake, self.settings.size) or pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
+        if hits_wall(self.snake, self.settings.realsize) or pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
             # Wenn die Snake gegen eine Wand oder gegen ein Schwanzteil trifft
             self.running = False
             self.dead()
 
     def blit_background(self):
-        for i in range(self.settings.size[0]//TILE_SIZE[0]):
-            for ii in range(self.settings.size[1]//TILE_SIZE[1]):
+        for i in range(self.settings.realsize[0]//TILE_SIZE[0]): # x-Achse
+            for ii in range(self.settings.realsize[1]//TILE_SIZE[1]): # y-Achse
                 if (i % 2 == 0 and ii % 2 == 0) or (i % 2 != 0 and ii % 2 != 0):
                     pygame.draw.rect(self.mainscreen, (30, 30, 30, 100),  # Farbe ist ein dunkles Grau
                                      pygame.Rect(i*TILE_SIZE[0], ii*TILE_SIZE[1], *TILE_SIZE))
@@ -104,13 +103,12 @@ class Game:
 
     def run(self) -> None:
         self.running = True
-        passed_time = 0  # time till next move
+        passed_time = 0  # Zeit die seit der letzten Bildschirmaktualiserung vergangen ist
 
         self.blit_background()
         for entity in self.all_entities:
             self.mainscreen.blit(entity.surf, entity.rect)
-            print(type(entity), entity.rect)
-            
+
         pygame.display.flip()
 
         while self.running:
@@ -142,11 +140,11 @@ class Game:
         pause_text2 = FONT.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
 
         # text1
-        pause_text1_centerpos = center(pause_text1, self.settings.size)
+        pause_text1_centerpos = center(pause_text1, self.settings.realsize)
         self.mainscreen.blit(pause_text1, pause_text1_centerpos)
 
         # text2
-        pause_text2_centerpos = center(pause_text2, self.settings.size)
+        pause_text2_centerpos = center(pause_text2, self.settings.realsize)
         pause_text2_centerpos = (pause_text2_centerpos[0], pause_text2_centerpos[1] + pause_text2.get_height() + 20)  # 20: space beetween the texts
         self.mainscreen.blit(pause_text2, pause_text2_centerpos)
 
@@ -172,21 +170,21 @@ class Game:
         pause_text1 = FONT.render(f'Du hast {len(self.snake.tails)} Punkte erreicht', False, THECOLORS.get("white"))
         pause_text2 = FONT.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
 
-        grey_surf = pygame.Surface(self.settings.size)
+        grey_surf = pygame.Surface(self.settings.realsize)
         grey_surf.fill((20, 20, 20, 180))
         grey_surf.set_alpha(180)
         self.mainscreen.blit(grey_surf, grey_surf.get_rect())
 
         # text1
-        pause_text1_centerpos = center(pause_text1, self.settings.size)
+        pause_text1_centerpos = center(pause_text1, self.settings.realsize)
         self.mainscreen.blit(pause_text1, pause_text1_centerpos)
 
         # text2
-        pause_text2_centerpos = center(pause_text2, self.settings.size)
+        pause_text2_centerpos = center(pause_text2, self.settings.realsize)
         pause_text2_centerpos = (pause_text2_centerpos[0], pause_text2_centerpos[1] + pause_text2.get_height() + 20)  # 20: space beetween the texts
         self.mainscreen.blit(pause_text2, pause_text2_centerpos)
 
-        
+
         pygame.display.flip()
         while wait:
             for event in pygame.event.get():
@@ -209,21 +207,21 @@ class Game:
         pause_text1 = FONT.render(f'Du hast gewonnen!', False, THECOLORS.get("white"))
         pause_text2 = FONT.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
 
-        grey_surf = pygame.Surface(self.settings.size)
+        grey_surf = pygame.Surface(self.settings.realsize)
         grey_surf.fill((20, 20, 20, 180))
         grey_surf.set_alpha(180)
         self.mainscreen.blit(grey_surf, grey_surf.get_rect())
 
         # text1
-        pause_text1_centerpos = center(pause_text1, self.settings.size)
+        pause_text1_centerpos = center(pause_text1, self.settings.realsize)
         self.mainscreen.blit(pause_text1, pause_text1_centerpos)
 
         # text2
-        pause_text2_centerpos = center(pause_text2, self.settings.size)
+        pause_text2_centerpos = center(pause_text2, self.settings.realsize)
         pause_text2_centerpos = (pause_text2_centerpos[0], pause_text2_centerpos[1] + pause_text2.get_height() + 20)  # 20: space beetween the texts
         self.mainscreen.blit(pause_text2, pause_text2_centerpos)
 
-        
+
         pygame.display.flip()
         while wait:
             for event in pygame.event.get():
@@ -245,7 +243,7 @@ class HeadSwitch(Game):
         collide_with_apple = False
         if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple):
             collide_with_apple = True
-            apple_position = get_apple_position(self.snake, self.settings.size, self.apple.rect.topleft)
+            apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
             self.apple.kill()
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
@@ -256,13 +254,13 @@ class HeadSwitch(Game):
 
         self.snake.update(collide_with_apple, False)
         if collide_with_apple:
-            tail_to_switch = self.snake.tails.pop()
+            tail_to_switch = self.snake.tails.pop() # entfernt hinterstes Schwanzteil aus der Liste
             self.snake.rect, tail_to_switch.rect = tail_to_switch.rect, self.snake.rect  # Positionen werden getauscht
-            self.snake.tails.reverse()  # Sollte so funktionieren
-            self.snake.tails.append(tail_to_switch)
+            self.snake.tails.reverse()  # Reihenfolge der Schwanzteile muss geändert werden
+            self.snake.tails.append(tail_to_switch) # hinterstes Schwanzteil wird wieder angefügt
 
-            self.snake.update_direction()  # Richtung der Schlange wird angepasst
-        self.snake.texture()
+            self.snake.update_direction()  # Richtung der Schlange wird angepasst, falls nötig
+        self.snake.texture() # Schlange wird Dargestellt
 
 class WithoutWall(Game):
     def snake_logic(self):
@@ -272,7 +270,7 @@ class WithoutWall(Game):
 
         self.snake.texture(self.settings)
         if pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
-            # Wenn die Snake gegen eine Wand trifft oder gegen ein Schwanzteil
+            # Wenn die Snake gegen ein Schwanzteil trifft
             self.running = False
             self.dead()
 
@@ -282,7 +280,7 @@ class WithoutWall(Game):
         self.move(sprite)
         if pygame.sprite.collide_rect(sprite, self.apple):
             collide_with_apple = True
-            apple_position = get_apple_position(self.snake, self.settings.size, self.apple.rect.topleft)
+            apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
@@ -296,12 +294,12 @@ class WithoutWall(Game):
     def move(self, obj):
         topleft = obj.rect.topleft
         if topleft[0] < 0:
-            obj.rect.topleft = (self.settings.size[0]-TILE_SIZE[0], topleft[1])
-        elif topleft[0] >= self.settings.size[0]:
+            obj.rect.topleft = (self.settings.realsize[0]-TILE_SIZE[0], topleft[1])
+        elif topleft[0] >= self.settings.realsize[0]:
             obj.rect.topleft = (0, topleft[1])
         elif topleft[1] < 0:
-            obj.rect.topleft = (topleft[0], self.settings.size[1]-TILE_SIZE[1])
-        elif topleft[1] >= self.settings.size[1]:
+            obj.rect.topleft = (topleft[0], self.settings.realsize[1]-TILE_SIZE[1])
+        elif topleft[1] >= self.settings.realsize[1]:
             obj.rect.topleft = (topleft[0], 0)
 
 def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_topleft=None) -> Union[tuple, bool]:
@@ -311,20 +309,20 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
     """
     # Hier werden alle bereits Verwendeten Positionen in einem Set gespeichert
     used_positions = set()
-    used_positions.add(snake.rect.topleft)  # use topleft as position
+    used_positions.add(snake.rect.topleft)
     if old_apple_topleft is not None: used_positions.add(old_apple_topleft)
     for tail in snake.tails:
         used_positions.add(tail.rect.topleft)
 
 
     possible_positions = []
-    for topleft_x in range(0, size[0], TILE_SIZE[0]):
-        for topleft_y in range(0, size[1], TILE_SIZE[1]):
+    for topleft_x in range(0, size[0], TILE_SIZE[0]): # Koordinaten auf der x-Achse
+        for topleft_y in range(0, size[1], TILE_SIZE[1]): # Koordinaten auf der y-Achse
             if (topleft_x, topleft_y) not in used_positions:
                 possible_positions.append((topleft_x, topleft_y))
     if len(possible_positions) == 0:
         return False
-    
+
     return random.choice(possible_positions)
 
 def run(settings: Settings, presize: Tuple[int, int]) -> Tuple[pygame.Surface, bool]:
