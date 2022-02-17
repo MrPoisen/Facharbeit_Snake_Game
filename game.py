@@ -16,7 +16,7 @@ from sprites import SnakeHead, Apple, Tail
 from settings import Settings
 
 pygame.font.init() # Aufrufen, falls pygame noch nicht initialisiert ist
-FONT = pygame.font.SysFont('Calibri', 30)
+FONT_NAME = 'Calibri'
 
 def hits_wall(obj: Union[SnakeHead, Tail], size: Tuple[int, int]):
     topleft = obj.rect.topleft
@@ -136,8 +136,11 @@ class Game:
     def pause(self):
         wait = True
         # texts
-        pause_text1 = FONT.render('Pause', False, THECOLORS.get("white"))
-        pause_text2 = FONT.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+        size = int(self.settings.size[0] * 2.5)
+        font = pygame.font.SysFont(FONT_NAME, size)
+        pause_text1 = font.render('Pause', False, THECOLORS.get("white"))
+        pause_text2 = font.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+
 
         # text1
         pause_text1_centerpos = center(pause_text1, self.settings.realsize)
@@ -167,8 +170,10 @@ class Game:
     def dead(self):
         wait = True
         # texts
-        pause_text1 = FONT.render(f'Du hast {len(self.snake.tails)} Punkte erreicht', False, THECOLORS.get("white"))
-        pause_text2 = FONT.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+        size = int(self.settings.size[0] * 2.5)
+        font = pygame.font.SysFont(FONT_NAME, size)
+        pause_text1 = font.render(f'Du hast {len(self.snake.tails)} Punkte erreicht', False, THECOLORS.get("white"))
+        pause_text2 = font.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
 
         grey_surf = pygame.Surface(self.settings.realsize)
         grey_surf.fill((20, 20, 20, 180))
@@ -204,8 +209,10 @@ class Game:
     def win(self):
         wait = True
         # texts
-        pause_text1 = FONT.render(f'Du hast gewonnen!', False, THECOLORS.get("white"))
-        pause_text2 = FONT.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+        size = int(self.settings.size[0] * 2.5)
+        font = pygame.font.SysFont(FONT_NAME, size)
+        pause_text1 = font.render(f'Du hast gewonnen!', False, THECOLORS.get("white"))
+        pause_text2 = font.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
 
         grey_surf = pygame.Surface(self.settings.realsize)
         grey_surf.fill((20, 20, 20, 180))

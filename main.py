@@ -8,7 +8,7 @@ import game
 from settings import Settings
 
 MAINSCREEN_SIZE = (800, 400)
-TILE_SIZE = (20, 20)
+TILE_SIZE = (30, 30)
 
 class MainMenu:
     def __init__(self, settings: Settings = None):

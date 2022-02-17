@@ -190,7 +190,7 @@ class SnakeHead(pygame.sprite.Sprite):
     def add_tail(self, tail):
         self.tails.append(tail)
 
-    def update_direction(self):
+    def update_direction(self): # Funktioniert nicht im Wandlosspielmodus (braucht es auch nicht)
         snake_rect = self.rect
         next_taile_rect = self.tails[0].rect
 
@@ -209,16 +209,15 @@ class SnakeHead(pygame.sprite.Sprite):
 
         old_topleft = self.rect.topleft
         for index, tail in enumerate(self.tails):
-            if old_topleft[0] > tail.rect.topleft[0]:  # block before is more right
+            if old_topleft[0] > tail.rect.topleft[0]:  # Vorherige Position ist weiter rechts
                 tail.direction = Direction.RIGHT
             elif old_topleft[0] < tail.rect.topleft[0]:
                 tail.direction = Direction.LEFT
-            elif old_topleft[1] > tail.rect.topleft[1]:  # block before is more down
+            elif old_topleft[1] > tail.rect.topleft[1]:  # Vorherige Position ist weiter unten
                 tail.direction = Direction.DOWN
             else:
                 tail.direction = Direction.UP
             old_topleft = tail.rect.topleft
-
 
 
 class Tail(pygame.sprite.Sprite):
