@@ -18,7 +18,7 @@ class Settings:
         with open(self.path, "w") as file:
             json.dump(self.content, file)
 
-    def _check(self) -> bool:
+    def _check(self) -> bool: # Wird eigentlich nicht gebraucht
         for elem in ("gamemode", "size", "snakespeed"):
             if elem not in self.content.keys():
                 return False

@@ -9,6 +9,7 @@ from pygame.color import THECOLORS
 
 from typing import Union, Tuple
 import random
+import logging
 
 # eigene Module
 from main import resize, center, TILE_SIZE
@@ -33,7 +34,7 @@ class Game:
     """
     Basisklasse für das Spiel, die bereits die standard Snake-Variante implementiert
     """
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, logger_file=None, lvl=10) -> None:
         self.settings = settings
 
         # Spiel/Spielstand
@@ -55,6 +56,20 @@ class Game:
         self.snake.all_group = self.all_entities
 
         self.mainscreen = resize(self.settings.realsize)
+
+        # logging
+        self.logger = None
+        self.logger_file = logger_file
+        self.logging = False if logger_file is None else True
+        if self.logging:
+            self.logger = logging.getLogger(__name__)
+            self.logger.setLevel(lvl)
+            format = logging.Formatter('%(name)s -> %(asctime)s : %(levelname)s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+            fh = logging.FileHandler(logger_file)
+            fh.setLevel(lvl)
+            fh.setFormatter(format)
+            self.logger.addHandler(fh)
+            self.logger.info(f"instance of {type(self)} created")
 
     def events(self):
         for event in pygame.event.get():
@@ -80,6 +95,7 @@ class Game:
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.running = False
                 self.win()
+                return
             self.apple = Apple(apple_position, TILE_SIZE)
             self.all_entities.add(self.apple)
 
@@ -88,6 +104,8 @@ class Game:
     def snake_logic(self):
         if hits_wall(self.snake, self.settings.realsize) or pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
             # Wenn die Snake gegen eine Wand oder gegen ein Schwanzteil trifft
+            if self.logging:
+                self.logger.debug(f"Collision with Wall: {hits_wall(self.snake, self.settings.realsize)}, Tails: {bool(pygame.sprite.spritecollide(self.snake, self.tails, dokill=False))}")
             self.running = False
             self.dead()
 
@@ -132,8 +150,17 @@ class Game:
                     self.mainscreen.blit(entity.surf, entity.rect)
 
                 pygame.display.flip()
+                if self.logging:
+                    self.logger.info("game updated")
+                    self.logger.debug(f"Snake: {self.snake.rect.topleft}, {self.snake.direction}")
+                    for tail in self.snake.tails:
+                        self.logger.debug(f"Tail: {tail.rect.topleft}, {tail.direction}")
+        if self.logging:
+            self.logger.info("game ended")
 
     def pause(self):
+        if self.logging:
+            self.logger.info("pause called")
         wait = True
         # texts
         size = int(self.settings.size[0] * 2.5)
@@ -168,6 +195,8 @@ class Game:
                     self.quit = True
 
     def dead(self):
+        if self.logging:
+            self.logger.info("dead called")
         wait = True
         # texts
         size = int(self.settings.size[0] * 2.5)
@@ -207,6 +236,8 @@ class Game:
                     self.quit = True
 
     def win(self):
+        if self.logging:
+            self.logger.info("win called")
         wait = True
         # texts
         size = int(self.settings.size[0] * 2.5)
@@ -256,6 +287,7 @@ class HeadSwitch(Game):
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.running = False
                 self.win()
+                return
             self.apple = Apple(apple_position, TILE_SIZE)
             self.all_entities.add(self.apple)
 
@@ -278,6 +310,8 @@ class WithoutWall(Game):
         self.snake.texture(self.settings)
         if pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
             # Wenn die Snake gegen ein Schwanzteil trifft
+            if self.logging:
+                self.logger.debug(f"Collision with Tails")
             self.running = False
             self.dead()
 
@@ -293,7 +327,8 @@ class WithoutWall(Game):
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.running = False
                 self.win()
-            self.apple = Apple(apple_position)
+                return
+            self.apple = Apple(apple_position, TILE_SIZE)
             self.all_entities.add(self.apple)
 
         self.snake.update(collide_with_apple, False)  # Bewegt den Spieler
@@ -332,10 +367,13 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
 
     return random.choice(possible_positions)
 
-def run(settings: Settings, presize: Tuple[int, int]) -> Tuple[pygame.Surface, bool]:
+def run(settings: Settings, presize: Tuple[int, int], logger_file, lvl) -> Tuple[pygame.Surface, bool]:
     GAMEMODES = {"default": Game, "no_walls": WithoutWall, "switching_head": HeadSwitch}
     game_class = GAMEMODES.get(settings.gamemode)
-    game = game_class(settings)
+    game = game_class(settings, logger_file, lvl)
     game.run()
-    screen = resize(presize)
+    if game.quit:
+        screen = game.mainscreen
+    else:
+        screen = resize(presize)
     return screen, game.quit

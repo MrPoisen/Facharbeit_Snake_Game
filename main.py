@@ -1,8 +1,10 @@
 from typing import Tuple, Union
+import logging
+from datetime import datetime
+from sys import argv
 
 import pygame
 import pygame_gui
-#from pygame.color import THECOLORS
 
 import game
 from settings import Settings
@@ -11,15 +13,31 @@ MAINSCREEN_SIZE = (800, 400)
 TILE_SIZE = (30, 30)
 
 class MainMenu:
-    def __init__(self, settings: Settings = None):
-        # Pygame initialisieren
-        pygame.init()
-        pygame.font.init()
-
+    def __init__(self, settings: Settings = None, logging_=False, lvl=logging.DEBUG):
         # Einstellungen
         if settings is None:
             settings = Settings(tilesize=TILE_SIZE, autosave=True)
         self.settings = settings
+
+        # logging
+        self.logger = None
+        self.logger_file = None
+        self.logging = logging_
+        self.logging_lvl = lvl
+        if logging_:
+            self.logger = logging.getLogger(__name__)
+            self.logger.setLevel(lvl)
+            self.logger_file = f"logs/{datetime.now().strftime('%d-%m-%Y %H.%M.%S')}.log"
+            format = logging.Formatter('%(name)s -> %(asctime)s : %(levelname)s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+            fh = logging.FileHandler(self.logger_file)
+            fh.setLevel(lvl)
+            fh.setFormatter(format)
+            self.logger.addHandler(fh)
+            self.logger.debug(f"loaded settings: {self.settings.content}")
+
+        # Pygame initialisieren
+        pygame.init()
+        pygame.font.init()
 
         pygame.display.set_caption("Snake")
 
@@ -118,12 +136,12 @@ class MainMenu:
 
         gamesize_inputbox1 = pygame_gui.elements.UITextEntryLine(size_inputfiled1_rect, self.ui_manager,
                                                                  settings_plane)
-        gamesize_inputbox1.set_text(str(self.settings.size[0]))
+        gamesize_inputbox1.set_text(str(self.settings.size[0])+" ")
         self.ui_elements["gamesize_inputbox1"] = gamesize_inputbox1
 
         gamesize_inputbox2 = pygame_gui.elements.UITextEntryLine(size_inputfiled2_rect, self.ui_manager,
                                                                  settings_plane)
-        gamesize_inputbox2.set_text(str(self.settings.size[1]))
+        gamesize_inputbox2.set_text(str(self.settings.size[1])+" ")
         self.ui_elements["gamesize_inputbox2"] = gamesize_inputbox2
 
         # Speichern/Schließen
@@ -152,6 +170,9 @@ class MainMenu:
         self.ui_elements.get("main_plane").show()
         self.ui_elements.get("settings_plane").hide()
 
+        if self.logging:
+            self.logger.info("setup_ui called")
+
     def events(self):
         for event in pygame.event.get():
 
@@ -161,11 +182,19 @@ class MainMenu:
             if event.type == pygame_gui.UI_BUTTON_PRESSED:
 
                 if event.ui_element == self.ui_elements.get("start"):  # Startknopf wurde gedrückt
-                    self.screen, quit_ = game.run(self.settings, MAINSCREEN_SIZE)
-                    if quit_ is True:
-                        self.running = False
-                        pygame.quit()
-                        exit(1)
+                    try:
+                        self.screen, quit_ = game.run(self.settings, MAINSCREEN_SIZE, self.logger_file, self.logging_lvl)
+                    except Exception as e:
+                        from traceback import format_exc
+                        if self.logging:
+                            self.logger.critical(f"Game crashed; Exception: {str(e)}, traceback: {format_exc()}")
+                    else:
+                        if quit_ is True:
+                            if self.logging:
+                                self.logger.info("going to quit pygame and call 'exit(1)'")
+                            self.running = False
+                            pygame.quit()
+                            exit(1)
 
                 elif event.ui_element == self.ui_elements.get("main_close_button"):  # Schließenknopf wurde gedrückt
                     self.running = False
@@ -173,10 +202,14 @@ class MainMenu:
                 elif event.ui_element == self.ui_elements.get("settings"):  # Einstellungsknopf wurde gedrückt
                     self.ui_elements.get("settings_plane").show()
                     self.ui_elements.get("main_plane").hide()
+                    if self.logging:
+                        self.logger.info("showing settings menu")
 
                 elif event.ui_element == self.ui_elements.get("quit_settings"): # Einstellungen-Verlassen-Knopf wurde gedrückt
                     self.ui_elements.get("settings_plane").hide()
                     self.ui_elements.get("main_plane").show()
+                    if self.logging:
+                        self.logger.info("showing main menu")
 
                 elif event.ui_element == self.ui_elements.get("save"): # Einstellungen-Speichern-Knopf wurde gedrückt
                     self.save()
@@ -202,16 +235,27 @@ class MainMenu:
         pygame.quit()
 
     def save(self) -> None:
-
+        if self.logging:
+            self.logger.info("save called")
         # Spielfeldgröße
-        width = int(self.ui_elements.get("gamesize_inputbox1").get_text())
-        height = int(self.ui_elements.get("gamesize_inputbox2").get_text())
-        if width < 4 or height < 4:
-            self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0]))
-            self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1]))
-            pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 100, 100), resulution=self.settings.size), "Invalid Gamesize", self.ui_manager)
+        try:
+            width = int(self.ui_elements.get("gamesize_inputbox1").get_text().strip(" "))
+            height = int(self.ui_elements.get("gamesize_inputbox2").get_text().strip(" "))
+        except ValueError:
+            if self.logging:
+                self.logger.warning(f"Wrong Value for width ({self.ui_elements.get('gamesize_inputbox1').get_text().strip(' ')}) or height ({self.ui_elements.get('gamesize_inputbox2').get_text().strip(' ')})")
+            self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0])+" ")
+            self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1])+" ")
         else:
-            self.settings.size = [width, height]
+            if width < 4 or height < 4:
+                self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0])+" ")
+                self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1])+" ")
+                pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 100, 100), resulution=self.settings.size), "Invalid Gamesize", self.ui_manager)
+
+                if self.logging:
+                    self.logger.debug(f"Given width ({width}) or height ({height}) to low (<4)")
+            else:
+                self.settings.size = [width, height]
 
         # Spielmodus
         selection_list: pygame_gui.elements.ui_selection_list.UISelectionList = self.ui_elements.get("gamemode_selection")
@@ -220,6 +264,8 @@ class MainMenu:
             gamemode_text: pygame_gui.elements.UILabel = self.ui_elements.get("gamemode_current")
             gamemode_text.set_text(f"Spielmodus: {selected}")
             self.settings.gamemode = map_gamemode(selected)
+        elif self.logging:
+            self.logger.debug("gamemode not changed")
 
         # Schlangengeschwindigkeit
         speed = self.ui_elements.get("snakespeed_input").get_text()
@@ -227,9 +273,14 @@ class MainMenu:
             speed = float(speed)
         except ValueError:
             self.ui_elements.get("snakespeed_input").set_text(str(self.settings.snakespeed))
+            if self.logging:
+                self.logger.warning(f"Given snakespeed input is invalid ({speed})")
         else:
             # Wird ausgeführt wenn es keinen Error gibt
             self.settings.snakespeed = speed
+
+        if self.logging:
+            self.logger.debug(f"new settings: {self.settings.content}")
 
 def center(object_, resolution: Tuple[int, int] = MAINSCREEN_SIZE):
     object_width = object_.width if hasattr(object_, "width") else object_.get_width()
@@ -315,5 +366,11 @@ def map_gamemode(name: str) -> str:
         raise Exception("gave a wrong name")
 
 if __name__ == "__main__":
-    MainMenu().run() # startet das Programm
+    log = False
+    lvl = logging.DEBUG
+    if len(argv) >= 2 and argv[1].lower() == "debug":
+        log = True
+        if len(argv) >= 3:
+            lvl = int(argv[2])*10
+    MainMenu(logging_=log, lvl=lvl).run() # startet das Programm
     # main()
