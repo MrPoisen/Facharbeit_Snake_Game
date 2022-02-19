@@ -131,7 +131,7 @@ class Game:
 
         while self.running:
             dt = self.clock.tick(self.settings.fps)
-            passed_time += dt
+            passed_time += dt # passed_time und dt sind in ms
 
             self.events()
 
@@ -139,9 +139,9 @@ class Game:
             self.snake.accept_direction(pygame.key.get_pressed())
 
             if passed_time >= (1000/self.settings.snakespeed):
-                # Wenn die vergangene Zeit größer ist als 1000 durch Wie oft die Schlange sich pro sekunde Bewegen soll
+                # Wenn die vergangene Zeit größer ist als 1000 durch 'Wie oft die Schlange sich pro sekunde Bewegen soll'
                 # durch '1000/' werden die Sekunden der snakespeed in millisekunden umgerechnet
-                passed_time = 0
+                # Beispiel: snakespeed = 2 (Schlange bewegt sich 2mal pro Sekunde) vergangene Zeit: 500ms | 500ms >=1000/2 -> 500ms >= 500 -> True
                 self.apple_logic()
                 self.snake_logic()
 
@@ -151,10 +151,13 @@ class Game:
 
                 pygame.display.flip()
                 if self.logging:
-                    self.logger.info("game updated")
-                    self.logger.debug(f"Snake: {self.snake.rect.topleft}, {self.snake.direction}")
+                    self.logger.info(f"game updated after {passed_time}ms ({passed_time/1000}s")
+                    self.logger.debug(f"Snake: Topleft: {self.snake.rect.topleft}, Direction: {self.snake.direction}, Edges: {self.snake.edges}")
                     for tail in self.snake.tails:
-                        self.logger.debug(f"Tail: {tail.rect.topleft}, {tail.direction}")
+                        self.logger.debug(f"Tail: Topleft: {tail.rect.topleft}, Direction: {tail.direction}, Edges: {tail.edges}")
+
+                passed_time = 0
+
         if self.logging:
             self.logger.info("game ended")
 
@@ -299,7 +302,7 @@ class HeadSwitch(Game):
             self.snake.tails.append(tail_to_switch) # hinterstes Schwanzteil wird wieder angefügt
 
             self.snake.update_direction()  # Richtung der Schlange wird angepasst, falls nötig
-        self.snake.texture() # Schlange wird Dargestellt
+        self.snake.texture(full=collide_with_apple) # Schlange wird Dargestellt
 
 class WithoutWall(Game):
     def snake_logic(self):
@@ -307,7 +310,7 @@ class WithoutWall(Game):
         for tail in self.snake.tails:
             self.move(tail)
 
-        self.snake.texture(self.settings)
+        self.snake.texture(self.settings, self.collide_with_apple)
         if pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
             # Wenn die Snake gegen ein Schwanzteil trifft
             if self.logging:
@@ -316,11 +319,11 @@ class WithoutWall(Game):
             self.dead()
 
     def apple_logic(self):
-        collide_with_apple = False
+        self.collide_with_apple = False
         sprite = self.snake.next_pos()
         self.move(sprite)
         if pygame.sprite.collide_rect(sprite, self.apple):
-            collide_with_apple = True
+            self.collide_with_apple = True
             apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
@@ -331,7 +334,8 @@ class WithoutWall(Game):
             self.apple = Apple(apple_position, TILE_SIZE)
             self.all_entities.add(self.apple)
 
-        self.snake.update(collide_with_apple, False)  # Bewegt den Spieler
+        self.snake.update(self.collide_with_apple, False)  # Bewegt den Spieler
+
 
     def move(self, obj):
         topleft = obj.rect.topleft

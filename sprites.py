@@ -44,7 +44,6 @@ class Apple(pygame.sprite.Sprite):
         super(Apple, self).__init__()
         self.surf = pygame.Surface(size)
         self.surf.fill(THECOLORS.get("red"))
-        #pygame.draw.circle(self.surf, THECOLORS.get("red"), (size[0]//2, size[1]//2), min((size[0]//2, size[1]//2)))
         self.rect = self.surf.get_rect()
         self.rect.topleft = position  # moves apple
 
@@ -93,6 +92,7 @@ class SnakeHead(pygame.sprite.Sprite):
             pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1))
 
         self.surf.blit(self.img, pygame.Rect(1,1,18,18))
+        self.edges = {"top":top, "right":right, "bottom":bottom, "left":left}
 
     def accept_direction(self, pressed_keys):
         if (pressed_keys[K_UP] or pressed_keys[K_w]) and self._lastdirection != Direction.DOWN:
@@ -128,9 +128,9 @@ class SnakeHead(pygame.sprite.Sprite):
                 tail.direction = old_direction
 
         if texture:
-            self.texture()
+            self.texture(full=collide_with_apple)
 
-    def texture(self, settings: Settings = None):
+    def texture(self, settings: Settings = None, full: bool = False):
         # Für die richtige Darstellung
         if len(self.tails) == 0:
             self.make_surf()
@@ -155,37 +155,52 @@ class SnakeHead(pygame.sprite.Sprite):
             return
 
         tails = [self, *self.tails]
-        for index, tail in enumerate(tails[1:], 1):
-            top = bottom = left = right = True
-            if (tail.rect.topleft[0] - TILE_SIZE[0] == tails[index - 1].rect.topleft[0]):
+        last = len(self.tails)-1
+        for index in range(len(self.tails)-1, -1, -1):
+            if full or index in {0, last}:
+                self._full_render(tails, self.tails[index], index+1, settings)
+            else:
+                self.tails[index].make_surf(**self.tails[index-1].edges)
+
+    def _full_render(self, tails, tail, index, settings=None):
+        top = bottom = left = right = True
+        if (tail.rect.topleft[0] - TILE_SIZE[0] == tails[index - 1].rect.topleft[0]):
+            left = False
+        elif (tail.rect.topleft[0] + TILE_SIZE[0] == tails[index - 1].rect.topleft[0]):
+            right = False
+        elif (tail.rect.topleft[1] - TILE_SIZE[1] == tails[index - 1].rect.topleft[1]):
+            top = False
+        elif (tail.rect.topleft[1] + TILE_SIZE[1] == tails[index - 1].rect.topleft[1]):
+            bottom = False
+        if index + 1 < len(tails):
+            if tail.rect.topleft[0] - TILE_SIZE[0] == tails[index + 1].rect.topleft[0]:
                 left = False
-            elif (tail.rect.topleft[0] + TILE_SIZE[0] == tails[index - 1].rect.topleft[0]):
+            elif tail.rect.topleft[0] + TILE_SIZE[0] ==  tails[index + 1].rect.topleft[0]:
                 right = False
-            elif (tail.rect.topleft[1] - TILE_SIZE[1] == tails[index - 1].rect.topleft[1]):
+            elif tail.rect.topleft[1] - TILE_SIZE[1] == tails[index + 1].rect.topleft[1]:
                 top = False
-            elif (tail.rect.topleft[1] + TILE_SIZE[1] == tails[index - 1].rect.topleft[1]):
+            elif tail.rect.topleft[1] + TILE_SIZE[1] == tails[index + 1].rect.topleft[1]:
                 bottom = False
-            if index + 1 < len(tails):
-                if tail.rect.topleft[0] - TILE_SIZE[0] == tails[index + 1].rect.topleft[0]:
-                    left = False
-                elif tail.rect.topleft[0] + TILE_SIZE[0] ==  tails[index + 1].rect.topleft[0]:
-                    right = False
-                elif tail.rect.topleft[1] - TILE_SIZE[1] == tails[index + 1].rect.topleft[1]:
-                    top = False
-                elif tail.rect.topleft[1] + TILE_SIZE[1] == tails[index + 1].rect.topleft[1]:
-                    bottom = False
 
-            if settings is not None:
-                if (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and (tails[index-1].direction is tail.direction and (index+1!=len(tails) or (index+1==len(tails) and tails[index-1].rect.topleft[0]==settings.realsize[0]-TILE_SIZE[0]))) and tail.rect.topleft[0] == 0:
-                    left = False
-                elif (tail.direction is Direction.LEFT or tail.direction is Direction.RIGHT) and (tails[index-1].direction is tail.direction and (index+1!=len(tails) or (index+1==len(tails) and tails[index-1].rect.topleft[0]==settings.realsize[0]-TILE_SIZE[0]))) and tail.rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0]:
-                    right = False
-                elif (tail.direction is Direction.UP or tail.direction is Direction.DOWN) and (tails[index-1].direction is tail.direction and (index+1!=len(tails) or (index+1==len(tails) and tails[index-1].rect.topleft[0]==settings.realsize[0]-TILE_SIZE[0]))) and tail.rect.topleft[1] == 0:
-                    top = False
-                elif (tail.direction is Direction.UP or tail.direction is Direction.DOWN) and (tails[index-1].direction is tail.direction and (index+1!=len(tails) or (index+1==len(tails) and tails[index-1].rect.topleft[0]==settings.realsize[0]-TILE_SIZE[0]))) and tail.rect.topleft[1] == settings.realsize[1]-TILE_SIZE[1]:
-                    bottom = False
+        if settings is not None:
+            if tail.direction is Direction.LEFT and tails[index-1].direction is tail.direction and tail.rect.topleft[0] == 0:
+                left = False
+            elif tail.direction is Direction.LEFT and (index+1 < len(tails) and tails[index+1].direction is tail.direction) and tail.rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0]:
+                right = False
+            elif tail.direction is Direction.RIGHT and tails[index-1].direction is tail.direction and tail.rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0]:
+                right = False
+            elif tail.direction is Direction.RIGHT and (index+1 < len(tails) and tails[index+1].direction is tail.direction) and tail.rect.topleft[0] == 0:
+                left = False
+            elif tail.direction is Direction.UP and tails[index-1].direction is tail.direction and tail.rect.topleft[1] == 0:
+                top = False
+            elif tail.direction is Direction.UP and (index+1 < len(tails) and tails[index+1].direction is tail.direction) and tail.rect.topleft[1] == settings.realsize[1]-TILE_SIZE[1]:
+                bottom = False
+            elif tail.direction is Direction.DOWN and tails[index-1].direction is tail.direction and tail.rect.topleft[1] == settings.realsize[1]-TILE_SIZE[1]:
+                bottom = False
+            elif tail.direction is Direction.DOWN and (index+1 < len(tails) and tails[index+1].direction is tail.direction) and tail.rect.topleft[1] == 0:
+                top = False
 
-            tail.make_surf(top, right, bottom, left)
+        tail.make_surf(top, right, bottom, left)
 
     def add_tail(self, tail):
         self.tails.append(tail)
@@ -229,7 +244,12 @@ class Tail(pygame.sprite.Sprite):
         self.rect.topleft = position
 
         self.direction = direction
-        self.edges = {"top":True, "right":True, "bottom":True, "left":True}
+
+        if direction is Direction.UP or direction is Direction.DOWN:
+            self.make_surf(top=False, bottom=False)
+        else:
+            self.make_surf(left=False, right=False)
+        #self.edges = {"top":True if direction is Direction.UP or, "right":True, "bottom":True, "left":True}
 
     def update(self):
         if self.direction == Direction.UP:
@@ -251,3 +271,4 @@ class Tail(pygame.sprite.Sprite):
             pygame.draw.line(self.surf, EDGECOLOR, (0, TILE_SIZE[0]-1), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
         if left:
             pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1))
+        self.edges = {"top":top, "right":right, "bottom":bottom, "left":left}
