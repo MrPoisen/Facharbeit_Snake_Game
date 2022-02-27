@@ -1,16 +1,20 @@
+# Standardbibliothek
 from typing import Tuple, Union
 import logging
 from datetime import datetime
 from sys import argv
 
+# externe Bibliotheken
 import pygame
 import pygame_gui
 
+# lokale Module
 import game
 from settings import Settings
 
-MAINSCREEN_SIZE = (800, 400)
-TILE_SIZE = (30, 30)
+# KONSTANTEN
+MAINSCREEN_SIZE = (800, 400) # Größe des Hauptbildschirms
+TILE_SIZE = (30, 30) # Größe der Spielfelder
 
 class MainMenu:
     def __init__(self, settings: Settings = None, logging_=False, lvl=logging.DEBUG):
@@ -21,7 +25,7 @@ class MainMenu:
 
         # logging
         self.logger = None
-        self.logger_file = None
+        self.logger_file = None # Dateiname der Log-Datei
         self.logging = logging_
         self.logging_lvl = lvl
         if logging_:
@@ -29,7 +33,7 @@ class MainMenu:
             self.logger.setLevel(lvl)
             self.logger_file = f"logs/{datetime.now().strftime('%d-%m-%Y %H.%M.%S')}.log"
             format = logging.Formatter('%(name)s -> %(asctime)s : %(levelname)s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
-            fh = logging.FileHandler(self.logger_file)
+            fh = logging.FileHandler(self.logger_file) # Damit der logger in eine Datei schreibt
             fh.setLevel(lvl)
             fh.setFormatter(format)
             self.logger.addHandler(fh)
@@ -37,8 +41,7 @@ class MainMenu:
 
         # Pygame initialisieren
         pygame.init()
-        pygame.font.init()
-
+        # Titel
         pygame.display.set_caption("Snake")
 
         self.clock = pygame.time.Clock()
@@ -54,6 +57,7 @@ class MainMenu:
         main_plane = pygame_gui.elements.ui_panel.UIPanel(pygame.Rect(0, 0, *MAINSCREEN_SIZE), 0, self.ui_manager, visible=0)
         self.ui_elements["main_plane"] = main_plane
 
+        # Knopf der zu den Einstellungen führt
         settings = pygame_gui.elements.UIButton(
             relative_rect=center_object(pygame.Rect(200, 200, 200, 50), center_y=False),
             text="Einstellungen",
@@ -62,6 +66,7 @@ class MainMenu:
             visible=0)
         self.ui_elements["settings"] = settings
 
+        # Knopf der das Spiel startet
         start = pygame_gui.elements.UIButton(
             relative_rect=center_object(pygame.Rect(200, 100, 200, 50), center_y=False),
             text="Start",
@@ -70,6 +75,7 @@ class MainMenu:
             visible=0)
         self.ui_elements["start"] = start
 
+        # Text der sich über dem Startknopf befindet
         snake_title_text = pygame_gui.elements.UITextBox("<b>Snake Game<b>",
                                                          center_object(pygame.Rect(220, 40, 100, -1),
                                                                                      center_y=False, offset_x=50),
@@ -80,6 +86,7 @@ class MainMenu:
                                                          )
         self.ui_elements["snake_title_text"] = snake_title_text
 
+        # Knopf um das Programm zu verlassen
         main_close_button = pygame_gui.elements.UIButton(
             relative_rect=center_object(pygame.Rect(200, 300, 200, 50), center_y=False),
             text="Schließen",
@@ -179,22 +186,23 @@ class MainMenu:
             if event.type == pygame.QUIT:  # Fenster soll geschlossen werden
                 self.running = False
 
-            if event.type == pygame_gui.UI_BUTTON_PRESSED:
+            if event.type == pygame_gui.UI_BUTTON_PRESSED: # Event von pygame_gui
 
                 if event.ui_element == self.ui_elements.get("start"):  # Startknopf wurde gedrückt
                     try:
                         self.screen, quit_ = game.run(self.settings, MAINSCREEN_SIZE, self.logger_file, self.logging_lvl)
-                    except Exception as e:
+                    except Exception as e: # Fehler während der Ausführung des Spiels
                         from traceback import format_exc
                         if self.logging:
                             self.logger.critical(f"Game crashed; Exception: {str(e)}, traceback: {format_exc()}")
+                        self.screen = resize(MAINSCREEN_SIZE) # Stellt sicher, das self.screen die richtige Größe hat
                     else:
-                        if quit_ is True:
+                        if quit_ is True: # Gesamtes Programm soll beendet werden
                             if self.logging:
                                 self.logger.info("going to quit pygame and call 'exit(1)'")
                             self.running = False
                             pygame.quit()
-                            exit(1)
+                            exit(0) # beendet das Programm sofort
 
                 elif event.ui_element == self.ui_elements.get("main_close_button"):  # Schließenknopf wurde gedrückt
                     self.running = False
@@ -221,7 +229,7 @@ class MainMenu:
 
         self.running = True
         while self.running:
-            # gibt die sogenannte 'Deltatime' zurück
+            # gibt die sogenannte 'Deltatime' zurück (Zeit zwischen zwei Aufrufen)
             # /1000 damit man die Sekunden hat
             deltatime = self.clock.tick(self.settings.fps) / 1000
 
@@ -241,16 +249,18 @@ class MainMenu:
         try:
             width = int(self.ui_elements.get("gamesize_inputbox1").get_text().strip(" "))
             height = int(self.ui_elements.get("gamesize_inputbox2").get_text().strip(" "))
-        except ValueError:
+        except ValueError: # Mindestens ein Text in einem der Eingabefelder kann nicht in eine Ganzahl umgewandelt werden
             if self.logging:
                 self.logger.warning(f"Wrong Value for width ({self.ui_elements.get('gamesize_inputbox1').get_text().strip(' ')}) or height ({self.ui_elements.get('gamesize_inputbox2').get_text().strip(' ')})")
+            # Werte werden zurückgesetzt auf die vor der Veränderung
             self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0])+" ")
             self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1])+" ")
-        else:
-            if width < 4 or height < 4:
+        else: # Wird nur ausgeführt, wenn es keine Exception gab
+            if width < 4 or height < 4: # 4 ist die Mindestgröße
+                # Werte werden zurückgesetzt auf die vor der Veränderung
                 self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0])+" ")
                 self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1])+" ")
-                pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 100, 100), resulution=self.settings.size), "Invalid Gamesize", self.ui_manager)
+                pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 100, 100), resulution=self.settings.size), "Spielfeld muss jeweils größer als 3 sein", self.ui_manager)
 
                 if self.logging:
                     self.logger.debug(f"Given width ({width}) or height ({height}) to low (<4)")
@@ -260,18 +270,18 @@ class MainMenu:
         # Spielmodus
         selection_list: pygame_gui.elements.ui_selection_list.UISelectionList = self.ui_elements.get("gamemode_selection")
         selected = selection_list.get_single_selection()
-        if selected is not None:
+        if selected is not None: # Es wurde ein Spielmodus gewählt
             gamemode_text: pygame_gui.elements.UILabel = self.ui_elements.get("gamemode_current")
             gamemode_text.set_text(f"Spielmodus: {selected}")
-            self.settings.gamemode = map_gamemode(selected)
+            self.settings.gamemode = map_gamemode(selected) # Ausgewählter Spielmodus wird gespeichert
         elif self.logging:
-            self.logger.debug("gamemode not changed")
+            self.logger.debug("no gamemode selected")
 
         # Schlangengeschwindigkeit
         speed = self.ui_elements.get("snakespeed_input").get_text()
         try:
             speed = float(speed)
-        except ValueError:
+        except ValueError: # Der Inhalt des Eingabefelds ist keine Zahl (und kann entsprechend nicht konvertiert werden)
             self.ui_elements.get("snakespeed_input").set_text(str(self.settings.snakespeed))
             if self.logging:
                 self.logger.warning(f"Given snakespeed input is invalid ({speed})")
@@ -283,9 +293,10 @@ class MainMenu:
             self.logger.debug(f"new settings: {self.settings.content}")
 
 def center(object_, resolution: Tuple[int, int] = MAINSCREEN_SIZE):
-    object_width = object_.width if hasattr(object_, "width") else object_.get_width()
-    object_height = object_.height if hasattr(object_, "height") else object_.get_height()
+    object_width = object_.width if hasattr(object_, "width") else object_.get_width() # Weite des Objekts
+    object_height = object_.height if hasattr(object_, "height") else object_.get_height() # Höhe des Objekts
 
+    # - Weite/Höhe ist nötig um die Oberstlinke Position zu erhalten
     topleft_x = (resolution[0] - object_width) // 2
     topleft_y = (resolution[1] - object_height) // 2
     return [topleft_x, topleft_y]
@@ -295,10 +306,12 @@ def center_object(object_, center_x=True, center_y = True, resulution: Tuple[int
     """
     Funktioniert identisch zu 'center' mit dem Unterschied, das es mehr optionen gibt
     """
-    topleft = object_.topleft
+    topleft = object_.topleft # alte Position wird gespeichert
     positions = center(object_, resulution)
     positions[0] += offset_x
     positions[1] += offset_y
+
+    # Zurücksetzen von Positionen
     if not center_x:
         positions[0] = topleft[0]
 
@@ -320,12 +333,13 @@ def center_objects(*objects, center_x: Union[bool, int] = True, center_y: Union[
             if index == 0:
                 obj.topleft = (space_value_x, obj.topleft[1])
             else:
+                # neue x-Position:  Obenlinke x-position des Vorangegangenen Objekts + die Weite dieses Objekts + der freie Platz zwischen jedem Objekt
                 obj.topleft = (objects[index-1].topleft[0] + objects[index-1].width + space_value_x, obj.topleft[1])
 
     elif isinstance(center_x, int): # Der Mittelpunkt der Objekte wird auf der x-Achse zu'center_x' gesetzt
 
         for index, obj in enumerate(objects):
-            obj.topleft = (center_x - obj.width // 2, obj.topleft[1])
+            obj.center = (center_x, obj.center[1])
 
     if center_y is True:
         free_size_y = resolution[1] # Platz der auf der y-Achse frei ist
@@ -338,11 +352,12 @@ def center_objects(*objects, center_x: Union[bool, int] = True, center_y: Union[
             if index == 0:
                 obj.topleft = (obj.topleft[0], space_value_y)
             else:
+                # neue y-Position:  Obenlinke y-position des Vorangegangenen Objekts + die Höhe dieses Objekts + der freie Platz zwischen jedem Objekt
                 obj.topleft = (obj.topleft[0], objects[index-1].topleft[1] + objects[index-1].height + space_value_y)
 
     elif isinstance(center_y, (int, float)): # Der Mittelpunkt der Objekte wird auf der y-Achse zu'center_y' gesetzt
         for index, obj in enumerate(objects):
-            obj.topleft = (obj.topleft[0], center_y - obj.height//2)
+            obj.center = (obj.center[0], center_y)
     return objects
 
 def resize(size, surface=None) -> pygame.Surface:
@@ -365,12 +380,15 @@ def map_gamemode(name: str) -> str:
     else:
         raise Exception("gave a wrong name")
 
-if __name__ == "__main__":
+if __name__ == "__main__": # ist nur Wahr, wenn main.py direkt aufgerufen wurde (nicht importiert)
+    # Standardargumente
     log = False
     lvl = logging.DEBUG
+
+    # Überprüfen der übergebenen Argumente auf den Text "debug" und eine Zahl
     if len(argv) >= 2 and argv[1].lower() == "debug":
         log = True
         if len(argv) >= 3:
-            lvl = int(argv[2])*10
+            lvl = int(argv[2])*10   # DEBUG ist im logging modul eigentlich 10, INFO 20
+                                    # so müssen nur 1,2,3,4 oder 5 eingegeben werden um ein Level zu setzen
     MainMenu(logging_=log, lvl=lvl).run() # startet das Programm
-    # main()

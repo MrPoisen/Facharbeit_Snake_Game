@@ -1,3 +1,9 @@
+# Standardbibliothek
+from typing import Union, Tuple
+import random
+import logging
+
+# externe Bibliothek
 import pygame
 from pygame.locals import (
     K_ESCAPE,
@@ -7,19 +13,18 @@ from pygame.locals import (
 ) # Tastenevents
 from pygame.color import THECOLORS
 
-from typing import Union, Tuple
-import random
-import logging
-
-# eigene Module
+# lokale Module
 from main import resize, center, TILE_SIZE
 from sprites import SnakeHead, Apple, Tail
 from settings import Settings
 
-pygame.font.init() # Aufrufen, falls pygame noch nicht initialisiert ist
+pygame.font.init() # Aufrufen, falls pygame.font noch nicht initialisiert ist
+
+# KONSTANTE
 FONT_NAME = 'Calibri'
 
-def hits_wall(obj: Union[SnakeHead, Tail], size: Tuple[int, int]):
+def hits_wall(obj: Union[SnakeHead, Tail], size: Tuple[int, int]) -> bool:
+    """Gibt Wahr zurück, falls das obj-Objekt den Spielfeldrand überschreitet"""
     topleft = obj.rect.topleft
 
     if topleft[0] >= size[0] or topleft[1] >= size[1]:
@@ -34,7 +39,7 @@ class Game:
     """
     Basisklasse für das Spiel, die bereits die standard Snake-Variante implementiert
     """
-    def __init__(self, settings: Settings, logger_file=None, lvl=10) -> None:
+    def __init__(self, settings: Settings, logger_file=None, lvl=10):
         self.settings = settings
 
         # Spiel/Spielstand
@@ -60,6 +65,7 @@ class Game:
         # logging
         self.logger = None
         self.logger_file = logger_file
+        self.logger_level = lvl
         self.logging = False if logger_file is None else True
         if self.logging:
             self.logger = logging.getLogger(__name__)
@@ -71,7 +77,7 @@ class Game:
             self.logger.addHandler(fh)
             self.logger.info(f"instance of {type(self)} created")
 
-    def events(self):
+    def events(self) -> None:
         for event in pygame.event.get():
 
             if event.type == KEYDOWN:
@@ -81,13 +87,13 @@ class Game:
                 if event.key == K_ESCAPE:
                     self.pause()
 
-            elif event.type == QUIT:
+            elif event.type == QUIT: # Programm beenden
                 self.running = False
                 self.quit = True
 
-    def apple_logic(self):
+    def apple_logic(self) -> None:
         collide_with_apple = False
-        if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple):
+        if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple): # Wenn der Spieler den Apfel isst
             collide_with_apple = True
             apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
@@ -101,7 +107,7 @@ class Game:
 
         self.snake.update(collide_with_apple)  # Bewegt den Spieler
 
-    def snake_logic(self):
+    def snake_logic(self) -> None:
         if hits_wall(self.snake, self.settings.realsize) or pygame.sprite.spritecollide(self.snake, self.tails, dokill=False):
             # Wenn die Snake gegen eine Wand oder gegen ein Schwanzteil trifft
             if self.logging:
@@ -109,7 +115,8 @@ class Game:
             self.running = False
             self.dead()
 
-    def blit_background(self):
+    def blit_background(self) -> None:
+        """Generiert das Hintergrundmuster"""
         for i in range(self.settings.realsize[0]//TILE_SIZE[0]): # x-Achse
             for ii in range(self.settings.realsize[1]//TILE_SIZE[1]): # y-Achse
                 if (i % 2 == 0 and ii % 2 == 0) or (i % 2 != 0 and ii % 2 != 0):
@@ -141,32 +148,35 @@ class Game:
             if passed_time >= (1000/self.settings.snakespeed):
                 # Wenn die vergangene Zeit größer ist als 1000 durch 'Wie oft die Schlange sich pro sekunde Bewegen soll'
                 # durch '1000/' werden die Sekunden der snakespeed in millisekunden umgerechnet
-                # Beispiel: snakespeed = 2 (Schlange bewegt sich 2mal pro Sekunde) vergangene Zeit: 500ms | 500ms >=1000/2 -> 500ms >= 500 -> True
+                # Beispiel: snakespeed = 2 (Schlange soll sich 2mal pro Sekunde bewegen) vergangene Zeit: 500ms | 500ms >=1000/2 -> 500ms >= 500 -> True
+
                 self.apple_logic()
                 self.snake_logic()
 
+                # Darstellung
                 self.blit_background()
                 for entity in self.all_entities:
                     self.mainscreen.blit(entity.surf, entity.rect)
 
-                pygame.display.flip()
+                pygame.display.flip() # Aktualisiert den Bildschirm
+
                 if self.logging:
                     self.logger.info(f"game updated after {passed_time}ms ({passed_time/1000}s")
                     self.logger.debug(f"Snake: Topleft: {self.snake.rect.topleft}, Direction: {self.snake.direction}, Edges: {self.snake.edges}")
                     for tail in self.snake.tails:
                         self.logger.debug(f"Tail: Topleft: {tail.rect.topleft}, Direction: {tail.direction}, Edges: {tail.edges}")
 
-                passed_time = 0
+                passed_time = 0 # Zurücksetzen der vergangenen Zeit
 
         if self.logging:
             self.logger.info("game ended")
 
-    def pause(self):
+    def pause(self) -> None:
         if self.logging:
             self.logger.info("pause called")
         wait = True
         # texts
-        size = int(self.settings.size[0] * 2.5)
+        size = int(self.settings.size[0] * 2.5) # Den Faktor 2.5 habe ich 'experimentell' durch probieren ermittelt
         font = pygame.font.SysFont(FONT_NAME, size)
         pause_text1 = font.render('Pause', False, THECOLORS.get("white"))
         pause_text2 = font.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
@@ -197,16 +207,17 @@ class Game:
                     self.running = False
                     self.quit = True
 
-    def dead(self):
+    def dead(self) -> None:
         if self.logging:
             self.logger.info("dead called")
         wait = True
         # texts
-        size = int(self.settings.size[0] * 2.5)
+        size = int(self.settings.size[0] * 2.5) # Font Größe
         font = pygame.font.SysFont(FONT_NAME, size)
         pause_text1 = font.render(f'Du hast {len(self.snake.tails)} Punkte erreicht', False, THECOLORS.get("white"))
         pause_text2 = font.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
 
+        # Durchsichtiges Graues Overlay
         grey_surf = pygame.Surface(self.settings.realsize)
         grey_surf.fill((20, 20, 20, 180))
         grey_surf.set_alpha(180)
@@ -228,6 +239,16 @@ class Game:
                 if event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
                         wait = False
+                        # Startet ein neues Spiel
+                        logger = self.logger
+                        logger_file = self.logger_file
+                        logger_level = self.logger_level
+
+                        self.__init__(self.settings)
+                        self.logger = logger
+                        self.logger_file = logger_file
+                        self.logging_level = logger_level
+                        self.run()
 
                     if event.key == K_BACKSPACE:
                         wait = False
@@ -238,7 +259,7 @@ class Game:
                     self.running = False
                     self.quit = True
 
-    def win(self):
+    def win(self) -> None:
         if self.logging:
             self.logger.info("win called")
         wait = True
@@ -280,7 +301,7 @@ class Game:
                     self.quit = True
 
 class HeadSwitch(Game):
-    def apple_logic(self):
+    def apple_logic(self) -> None:
         collide_with_apple = False
         if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple):
             collide_with_apple = True
@@ -305,7 +326,7 @@ class HeadSwitch(Game):
         self.snake.texture(full=collide_with_apple) # Schlange wird Dargestellt
 
 class WithoutWall(Game):
-    def snake_logic(self):
+    def snake_logic(self) -> None:
         self.move(self.snake)
         for tail in self.snake.tails:
             self.move(tail)
@@ -315,11 +336,10 @@ class WithoutWall(Game):
             # Wenn die Snake gegen ein Schwanzteil trifft
             if self.logging:
                 self.logger.debug(f"Collision with Tails")
-            self.running = False
             self.dead()
 
-    def apple_logic(self):
-        self.collide_with_apple = False
+    def apple_logic(self) -> None:
+        self.collide_with_apple = False # wird als Attribute gespeichert, damit es für snake_logic verfügbar ist
         sprite = self.snake.next_pos()
         self.move(sprite)
         if pygame.sprite.collide_rect(sprite, self.apple):
@@ -337,7 +357,8 @@ class WithoutWall(Game):
         self.snake.update(self.collide_with_apple, False)  # Bewegt den Spieler
 
 
-    def move(self, obj):
+    def move(self, obj) -> None:
+        """Stellt sicher, das die Koordinaten des obj-Objektes immer im Spielfeld sind"""
         topleft = obj.rect.topleft
         if topleft[0] < 0:
             obj.rect.topleft = (self.settings.realsize[0]-TILE_SIZE[0], topleft[1])
@@ -361,11 +382,11 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
         used_positions.add(tail.rect.topleft)
 
 
-    possible_positions = []
+    possible_positions = [] # Alle freien Positionen
     for topleft_x in range(0, size[0], TILE_SIZE[0]): # Koordinaten auf der x-Achse
         for topleft_y in range(0, size[1], TILE_SIZE[1]): # Koordinaten auf der y-Achse
             if (topleft_x, topleft_y) not in used_positions:
-                possible_positions.append((topleft_x, topleft_y))
+                possible_positions.append((topleft_x, topleft_y)) # Position wird hinzugefügt
     if len(possible_positions) == 0:
         return False
 

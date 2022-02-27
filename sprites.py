@@ -1,3 +1,8 @@
+# Standardbibliothek
+from typing import List, Tuple
+from enum import Enum, auto
+
+# externe Bibliothek
 import pygame
 from pygame.color import THECOLORS
 from pygame.locals import (
@@ -11,12 +16,11 @@ from pygame.locals import (
     K_d
   )
 
-from typing import List, Tuple
-from enum import Enum, auto
-
+# lokale Module
 from settings import Settings
 from main import TILE_SIZE, resize
 
+# KONSTANTEN (hier sind es Farben)
 MAINCOLOR = THECOLORS.get("darkgreen")
 EDGECOLOR = THECOLORS.get("green")
 
@@ -45,26 +49,28 @@ class Apple(pygame.sprite.Sprite):
         self.surf = pygame.Surface(size)
         self.surf.fill(THECOLORS.get("red"))
         self.rect = self.surf.get_rect()
-        self.rect.topleft = position  # moves apple
+        self.rect.topleft = position
 
 class SnakeHead(pygame.sprite.Sprite):
     def __init__(self, size: tuple = (20, 20)):
         super(SnakeHead, self).__init__()
         self.surf = pygame.Surface(size)
+        # Bild
         self.img: pygame.Surface = pygame.image.load("snakehead.png")
-        self.img = resize((TILE_SIZE[0]-2, TILE_SIZE[1]-2), self.img)
+        self.img = resize((TILE_SIZE[0]-2, TILE_SIZE[1]-2), self.img) # stellt sicher, dass das Bild die richtige Größe hat
 
-        self.rect = self.surf.get_rect(x=0, y=0)
+        self.rect = self.surf.get_rect(x=0, y=0) # Die Schlange startet oben links
         self.direction = Direction.RIGHT
         self._lastdirection = self.direction
-        self.edges = {"top":True, "right":True, "bottom":True, "left":True}
-        self.tails: List[Tail] = []
+        self.edges = {"top":True, "right":True, "bottom":True, "left":True} # Welche Kanten gezeichnet werden soll
+        self.tails: List[Tail] = [] # Der Schlangenschwanz
 
         # Gruppen
         self.tail_group = None
         self.all_group = None
 
-    def next_pos(self, move_value: Tuple[int, int] = (20, 20)):
+    def next_pos(self, move_value: Tuple[int, int] = (20, 20)) -> pygame.sprite.Sprite:
+        """Gibt die nächste Position der Schlange als Sprite Objekt zurück"""
         move_x = 0
         move_y = 0
         if self.direction == Direction.RIGHT:
@@ -76,11 +82,11 @@ class SnakeHead(pygame.sprite.Sprite):
         elif self.direction == Direction.DOWN:
             move_y = move_value[1]  # moves Down
 
-        sprite = pygame.sprite.Sprite()
+        sprite = pygame.sprite.Sprite() # sprite dient als dummy
         sprite.rect = self.rect.move(move_x, move_y)
         return sprite
 
-    def make_surf(self, top=True, right=True, bottom=True, left=True):
+    def make_surf(self, top=True, right=True, bottom=True, left=True) -> None: # Generiert die Darstellung für den Schlangenkopf
         self.surf.fill(MAINCOLOR)
         if top:
             pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (TILE_SIZE[0]-1, 0))
@@ -92,9 +98,10 @@ class SnakeHead(pygame.sprite.Sprite):
             pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1))
 
         self.surf.blit(self.img, pygame.Rect(1,1,18,18))
-        self.edges = {"top":top, "right":right, "bottom":bottom, "left":left}
+        self.edges = {"top": top, "right": right, "bottom": bottom, "left": left}
 
-    def accept_direction(self, pressed_keys):
+    def accept_direction(self, pressed_keys) -> None:
+        """Überprüft die übergebenen gedrückten Knöpfe und ändert gegebenenfalls die Richtung der Schlange"""
         if (pressed_keys[K_UP] or pressed_keys[K_w]) and self._lastdirection != Direction.DOWN:
             self.direction = Direction.UP
         if (pressed_keys[K_DOWN] or pressed_keys[K_s]) and self._lastdirection != Direction.UP:
@@ -108,19 +115,20 @@ class SnakeHead(pygame.sprite.Sprite):
         self._lastdirection = self.direction  # verhindert illegale Bewegung
         old_topleft = self.rect.topleft
 
+        # Schlangenkopf wird bewegt
         next_pos_rect = self.next_pos(TILE_SIZE).rect  # Bewegt 'rect'
         self.rect.update(next_pos_rect.left, next_pos_rect.top, self.rect.width, self.rect.height)
 
-        if collide_with_apple:  # adds tail on the position the head was on before
+        if collide_with_apple:  # Fügt das Tail objekt hinzu; Die Position entspricht die der alten Schlangenkopfposition
             tail = Tail(old_topleft, self.direction, TILE_SIZE)
             self.tails.insert(0, tail)
             self.tail_group.add(tail)
             self.all_group.add(tail)
 
-        else:  # moves tails
+        else:  # Alle Tails werden bewegt
             old_directions = []
             for tail in self.tails:
-                tail.update()
+                tail.update() # Bewegt das Tail objekt
                 old_directions.append(tail.direction)
             old_directions.insert(0, self.direction)
             old_directions.pop()
@@ -131,7 +139,6 @@ class SnakeHead(pygame.sprite.Sprite):
             self.texture(full=collide_with_apple)
 
     def texture(self, settings: Settings = None, full: bool = False):
-        # Für die richtige Darstellung
         if len(self.tails) == 0:
             self.make_surf()
             return
@@ -155,15 +162,19 @@ class SnakeHead(pygame.sprite.Sprite):
             return
 
         tails = [self, *self.tails]
-        last = len(self.tails)-1
-        for index in range(len(self.tails)-1, -1, -1):
+        last = len(self.tails)-1 # Index des Letzten Schwanzteils
+        for index in range(len(self.tails)-1, -1, -1): # iteriert Rückwärts über die Indexe
             if full or index in {0, last}:
                 self._full_render(tails, self.tails[index], index+1, settings)
             else:
+                # Die neue Textur entspricht die des vorangegangenen Objektes
                 self.tails[index].make_surf(**self.tails[index-1].edges)
 
     def _full_render(self, tails, tail, index, settings=None):
+        """Generiert die Textur für ein bestimmtes Tail Objekt"""
         top = bottom = left = right = True
+
+        # Überprüft in welcher Richtung das vorangegangene Tail-Objekt relativ zum jetzigen ist
         if (tail.rect.topleft[0] - TILE_SIZE[0] == tails[index - 1].rect.topleft[0]):
             left = False
         elif (tail.rect.topleft[0] + TILE_SIZE[0] == tails[index - 1].rect.topleft[0]):
@@ -173,6 +184,7 @@ class SnakeHead(pygame.sprite.Sprite):
         elif (tail.rect.topleft[1] + TILE_SIZE[1] == tails[index - 1].rect.topleft[1]):
             bottom = False
         if index + 1 < len(tails):
+            # Überprüft in welcher Richtung das nächste Tail-Objekt relativ zum jetzigen ist
             if tail.rect.topleft[0] - TILE_SIZE[0] == tails[index + 1].rect.topleft[0]:
                 left = False
             elif tail.rect.topleft[0] + TILE_SIZE[0] ==  tails[index + 1].rect.topleft[0]:
@@ -182,7 +194,7 @@ class SnakeHead(pygame.sprite.Sprite):
             elif tail.rect.topleft[1] + TILE_SIZE[1] == tails[index + 1].rect.topleft[1]:
                 bottom = False
 
-        if settings is not None:
+        if settings is not None: # ist wichtig für den Wandlos Spielmodus
             if tail.direction is Direction.LEFT and tails[index-1].direction is tail.direction and tail.rect.topleft[0] == 0:
                 left = False
             elif tail.direction is Direction.LEFT and (index+1 < len(tails) and tails[index+1].direction is tail.direction) and tail.rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0]:
@@ -211,7 +223,7 @@ class SnakeHead(pygame.sprite.Sprite):
 
         if snake_rect.x > next_taile_rect.x:
             self.direction = Direction.RIGHT
-            self._lastdirection = Direction.invert(Direction.RIGHT)  # TODO: kann man auch direkt Direction.LEFT hinschreiben
+            self._lastdirection = Direction.invert(Direction.RIGHT)  # kann man auch direkt Direction.LEFT hinschreiben
         elif snake_rect.x < next_taile_rect.x:
             self.direction = Direction.LEFT
             self._lastdirection = Direction.invert(Direction.LEFT)
@@ -226,11 +238,11 @@ class SnakeHead(pygame.sprite.Sprite):
         for index, tail in enumerate(self.tails):
             if old_topleft[0] > tail.rect.topleft[0]:  # Vorherige Position ist weiter rechts
                 tail.direction = Direction.RIGHT
-            elif old_topleft[0] < tail.rect.topleft[0]:
+            elif old_topleft[0] < tail.rect.topleft[0]: # Vorherige Position ist weiter links
                 tail.direction = Direction.LEFT
             elif old_topleft[1] > tail.rect.topleft[1]:  # Vorherige Position ist weiter unten
                 tail.direction = Direction.DOWN
-            else:
+            else: # Vorherige Position ist weiter oben
                 tail.direction = Direction.UP
             old_topleft = tail.rect.topleft
 
@@ -245,13 +257,8 @@ class Tail(pygame.sprite.Sprite):
 
         self.direction = direction
 
-        if direction is Direction.UP or direction is Direction.DOWN:
-            self.make_surf(top=False, bottom=False)
-        else:
-            self.make_surf(left=False, right=False)
-        #self.edges = {"top":True if direction is Direction.UP or, "right":True, "bottom":True, "left":True}
-
     def update(self):
+        # Bewegt sich
         if self.direction == Direction.UP:
             self.rect.move_ip(0, -self.size[1])
         elif self.direction == Direction.RIGHT:
@@ -262,13 +269,14 @@ class Tail(pygame.sprite.Sprite):
             self.rect.move_ip(-self.size[0], 0)
 
     def make_surf(self, top=True, right=True, bottom=True, left=True):
+        """Erstellt die Textur"""
         self.surf.fill(MAINCOLOR)
         if top:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (TILE_SIZE[0]-1, 0))
+            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (TILE_SIZE[0]-1, 0)) # oben entlang
         if right:
-            pygame.draw.line(self.surf, EDGECOLOR, (TILE_SIZE[0]-1, 0), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
+            pygame.draw.line(self.surf, EDGECOLOR, (TILE_SIZE[0]-1, 0), (TILE_SIZE[0]-1, TILE_SIZE[1]-1)) # rechts entlang
         if bottom:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, TILE_SIZE[0]-1), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
+            pygame.draw.line(self.surf, EDGECOLOR, (0, TILE_SIZE[0]-1), (TILE_SIZE[0]-1, TILE_SIZE[1]-1)) # untem entlang
         if left:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1))
-        self.edges = {"top":top, "right":right, "bottom":bottom, "left":left}
+            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1)) # links entlang
+        self.edges = {"top": top, "right": right, "bottom": bottom, "left": left}
