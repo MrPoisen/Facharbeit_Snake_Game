@@ -243,11 +243,15 @@ class Game:
                         logger = self.logger
                         logger_file = self.logger_file
                         logger_level = self.logger_level
+                        logging = self.logging
 
+                        if self.logging:
+                            self.logger.debug("starting a new Game from death")
                         self.__init__(self.settings)
                         self.logger = logger
                         self.logger_file = logger_file
                         self.logging_level = logger_level
+                        self.logging = logging
                         self.run()
 
                     if event.key == K_BACKSPACE:
