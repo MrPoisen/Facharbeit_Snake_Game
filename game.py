@@ -161,7 +161,7 @@ class Game:
                 pygame.display.flip() # Aktualisiert den Bildschirm
 
                 if self.logging:
-                    self.logger.info(f"game updated after {passed_time}ms ({passed_time/1000}s")
+                    self.logger.info(f"game updated after {passed_time}ms ({passed_time/1000})s")
                     self.logger.debug(f"Snake: Topleft: {self.snake.rect.topleft}, Direction: {self.snake.direction}, Edges: {self.snake.edges}")
                     for tail in self.snake.tails:
                         self.logger.debug(f"Tail: Topleft: {tail.rect.topleft}, Direction: {tail.direction}, Edges: {tail.edges}")
