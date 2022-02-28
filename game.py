@@ -69,13 +69,14 @@ class Game:
         self.logging = False if logger_file is None else True
         if self.logging:
             self.logger = logging.getLogger(__name__)
-            self.logger.setLevel(lvl)
-            format = logging.Formatter('%(name)s -> %(asctime)s : %(levelname)s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
-            fh = logging.FileHandler(logger_file)
-            fh.setLevel(lvl)
-            fh.setFormatter(format)
-            self.logger.addHandler(fh)
-            self.logger.info(f"instance of {type(self)} created")
+            if len(self.logger.handlers) > 0: # Damit nicht bei jedem Reinitialisieren alles neu konfigurert wird
+                self.logger.setLevel(lvl)
+                format = logging.Formatter('%(name)s -> %(asctime)s : %(levelname)s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
+                fh = logging.FileHandler(logger_file)
+                fh.setLevel(lvl)
+                fh.setFormatter(format)
+                self.logger.addHandler(fh)
+                self.logger.info(f"instance of {type(self)} created")
 
     def events(self) -> None:
         for event in pygame.event.get():
@@ -169,6 +170,7 @@ class Game:
         if self.logging:
             self.logger.info("game ended")
 
+
     def pause(self) -> None:
         if self.logging:
             self.logger.info("pause called")
@@ -244,9 +246,6 @@ class Game:
                         logger_level = self.logger_level
                         logging = self.logging
 
-                        if self.logging:
-                            self.logger.debug("starting a new Game from death")
-
                         self.__init__(self.settings) # Reinitialisiert die Instanz ohne logger
                         # Den Logger der Instanz wieder hinzufügen
                         self.logger = logger
@@ -254,6 +253,9 @@ class Game:
                         self.logging_level = logger_level
                         self.logging = logging
                         self.running = True # Damit die Methode run() weiterläuft
+
+                        if self.logging:
+                            self.logger.debug("starting a new Game from death")
 
                     if event.key == K_BACKSPACE:
                         wait = False
