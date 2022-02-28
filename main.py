@@ -37,7 +37,7 @@ class MainMenu:
             fh.setLevel(lvl)
             fh.setFormatter(format)
             self.logger.addHandler(fh)
-            self.logger.debug(f"loaded settings: {self.settings.content}")
+            self.logger.info(f"loaded settings: {self.settings.content}")
 
         # Pygame initialisieren
         pygame.init()
@@ -260,7 +260,7 @@ class MainMenu:
                 # Werte werden zurückgesetzt auf die vor der Veränderung
                 self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0])+" ")
                 self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1])+" ")
-                pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 100, 100), resulution=self.settings.size), "Spielfeld muss jeweils größer als 3 sein", self.ui_manager)
+                pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 300, 200), resulution=MAINSCREEN_SIZE), "Das Spielfeld muss jeweils größer als 3 sein. Deswegen wurde es zurückgesetzt", self.ui_manager)
 
                 if self.logging:
                     self.logger.debug(f"Given width ({width}) or height ({height}) to low (<4)")
@@ -383,7 +383,7 @@ def map_gamemode(name: str) -> str:
 if __name__ == "__main__": # ist nur Wahr, wenn main.py direkt aufgerufen wurde (nicht importiert)
     # Standardargumente
     log = False
-    lvl = logging.DEBUG
+    lvl = logging.DEBUG # lvl = 10
 
     # Überprüfen der übergebenen Argumente auf den Text "debug" und eine Zahl
     if len(argv) >= 2 and argv[1].lower() == "debug":

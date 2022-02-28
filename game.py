@@ -99,7 +99,6 @@ class Game:
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
-                self.running = False
                 self.win()
                 return
             self.apple = Apple(apple_position, TILE_SIZE)
@@ -112,7 +111,6 @@ class Game:
             # Wenn die Snake gegen eine Wand oder gegen ein Schwanzteil trifft
             if self.logging:
                 self.logger.debug(f"Collision with Wall: {hits_wall(self.snake, self.settings.realsize)}, Tails: {bool(pygame.sprite.spritecollide(self.snake, self.tails, dokill=False))}")
-            self.running = False
             self.dead()
 
     def blit_background(self) -> None:
@@ -179,7 +177,7 @@ class Game:
         size = int(self.settings.size[0] * 2.5) # Den Faktor 2.5 habe ich 'experimentell' durch probieren ermittelt
         font = pygame.font.SysFont(FONT_NAME, size)
         pause_text1 = font.render('Pause', False, THECOLORS.get("white"))
-        pause_text2 = font.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+        pause_text2 = font.render('Drücke Esc oder Backspace', False, THECOLORS.get("white"))
 
 
         # text1
@@ -215,7 +213,7 @@ class Game:
         size = int(self.settings.size[0] * 2.5) # Font Größe
         font = pygame.font.SysFont(FONT_NAME, size)
         pause_text1 = font.render(f'Du hast {len(self.snake.tails)} Punkte erreicht', False, THECOLORS.get("white"))
-        pause_text2 = font.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+        pause_text2 = font.render('Drücke Esc oder Backspace', False, THECOLORS.get("white"))
 
         # Durchsichtiges Graues Overlay
         grey_surf = pygame.Surface(self.settings.realsize)
@@ -240,6 +238,7 @@ class Game:
                     if event.key == K_ESCAPE:
                         wait = False
                         # Startet ein neues Spiel
+
                         logger = self.logger
                         logger_file = self.logger_file
                         logger_level = self.logger_level
@@ -247,12 +246,14 @@ class Game:
 
                         if self.logging:
                             self.logger.debug("starting a new Game from death")
-                        self.__init__(self.settings)
+
+                        self.__init__(self.settings) # Reinitialisiert die Instanz ohne logger
+                        # Den Logger der Instanz wieder hinzufügen
                         self.logger = logger
                         self.logger_file = logger_file
                         self.logging_level = logger_level
                         self.logging = logging
-                        self.run()
+                        self.running = True # Damit die Methode run() weiterläuft
 
                     if event.key == K_BACKSPACE:
                         wait = False
@@ -271,7 +272,7 @@ class Game:
         size = int(self.settings.size[0] * 2.5)
         font = pygame.font.SysFont(FONT_NAME, size)
         pause_text1 = font.render(f'Du hast gewonnen!', False, THECOLORS.get("white"))
-        pause_text2 = font.render('Drücke ESC um fortzufahren', False, THECOLORS.get("white"))
+        pause_text2 = font.render('Drücke ESC oder Backspace', False, THECOLORS.get("white"))
 
         grey_surf = pygame.Surface(self.settings.realsize)
         grey_surf.fill((20, 20, 20, 180))
@@ -294,6 +295,23 @@ class Game:
                 if event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
                         wait = False
+                        # Startet ein neues Spiel
+
+                        logger = self.logger
+                        logger_file = self.logger_file
+                        logger_level = self.logger_level
+                        logging = self.logging
+
+                        if self.logging:
+                            self.logger.debug("starting a new Game from win")
+
+                        self.__init__(self.settings) # Reinitialisiert die Instanz ohne logger
+                        # Den Logger der Instanz wieder hinzufügen
+                        self.logger = logger
+                        self.logger_file = logger_file
+                        self.logging_level = logger_level
+                        self.logging = logging
+                        self.running = True # Damit die Methode run() weiterläuft
 
                     if event.key == K_BACKSPACE:
                         wait = False
@@ -313,7 +331,6 @@ class HeadSwitch(Game):
             self.apple.kill()
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
-                self.running = False
                 self.win()
                 return
             self.apple = Apple(apple_position, TILE_SIZE)
@@ -352,7 +369,6 @@ class WithoutWall(Game):
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
-                self.running = False
                 self.win()
                 return
             self.apple = Apple(apple_position, TILE_SIZE)
