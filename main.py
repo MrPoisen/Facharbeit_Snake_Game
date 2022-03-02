@@ -281,6 +281,8 @@ class MainMenu:
         speed = self.ui_elements.get("snakespeed_input").get_text()
         try:
             speed = float(speed)
+            if speed <= 0:
+                raise ValueError
         except ValueError: # Der Inhalt des Eingabefelds ist keine Zahl (und kann entsprechend nicht konvertiert werden)
             self.ui_elements.get("snakespeed_input").set_text(str(self.settings.snakespeed))
             if self.logging:
