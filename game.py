@@ -129,11 +129,7 @@ class Game:
         self.running = True
         passed_time = 0  # Zeit die seit der letzten Bildschirmaktualiserung vergangen ist
 
-        self.blit_background()
-        for entity in self.all_entities:
-            self.mainscreen.blit(entity.surf, entity.rect)
-
-        pygame.display.flip()
+        self.draw()
 
         while self.running:
             dt = self.clock.tick(self.settings.fps)
@@ -153,9 +149,7 @@ class Game:
                 self.snake_logic()
 
                 # Darstellung
-                self.blit_background()
-                for entity in self.all_entities:
-                    self.mainscreen.blit(entity.surf, entity.rect)
+                self.draw()
 
                 pygame.display.flip() # Aktualisiert den Bildschirm
 
@@ -170,16 +164,29 @@ class Game:
         if self.logging:
             self.logger.info("game ended")
 
+    def draw(self):
+        self.blit_background()
+        for entity in self.all_entities:
+            self.mainscreen.blit(entity.surf, entity.rect)
+
+        pygame.display.flip() # Aktualisiert den Bildschirm
 
     def pause(self) -> None:
         if self.logging:
             self.logger.info("pause called")
+        #dt = self.clock.tick()
         wait = True
         # texts
         size = int(self.settings.size[0] * 2.5) # Den Faktor 2.5 habe ich 'experimentell' durch probieren ermittelt
         font = pygame.font.SysFont(FONT_NAME, size)
         pause_text1 = font.render('Pause', False, THECOLORS.get("white"))
         pause_text2 = font.render('Drücke Esc oder Backspace', False, THECOLORS.get("white"))
+
+        # Durchsichtiges Graues Overlay
+        grey_surf = pygame.Surface(self.settings.realsize)
+        grey_surf.fill((20, 20, 20, 180))
+        grey_surf.set_alpha(180)
+        self.mainscreen.blit(grey_surf, grey_surf.get_rect())
 
 
         # text1
@@ -188,15 +195,16 @@ class Game:
 
         # text2
         pause_text2_centerpos = center(pause_text2, self.settings.realsize)
-        pause_text2_centerpos = (pause_text2_centerpos[0], pause_text2_centerpos[1] + pause_text2.get_height() + 20)  # 20: space beetween the texts
+        pause_text2_centerpos = (pause_text2_centerpos[0], pause_text2_centerpos[1] + pause_text2.get_height() + 20)  # 20: Platz zwischen den Texten
         self.mainscreen.blit(pause_text2, pause_text2_centerpos)
 
-        pygame.display.flip()
+        pygame.display.flip() # Darstellung
         while wait:
             for event in pygame.event.get():
                 if event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
                         wait = False
+                        self.draw()
 
                     if event.key == K_BACKSPACE:
                         wait = False
@@ -206,6 +214,7 @@ class Game:
                     wait = False
                     self.running = False
                     self.quit = True
+        self.clock.tick() # Setzt den Timer der Clock auf 0 zurück
 
     def dead(self) -> None:
         if self.logging:
