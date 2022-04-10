@@ -69,7 +69,7 @@ class Game:
         self.logging = False if logger_file is None else True
         if self.logging:
             self.logger = logging.getLogger(__name__)
-            if len(self.logger.handlers) > 0: # Damit nicht bei jedem Reinitialisieren alles neu konfigurert wird
+            if len(self.logger.handlers) == 0: # Damit nicht bei jedem Reinitialisieren alles neu konfigurert wird
                 self.logger.setLevel(lvl)
                 format = logging.Formatter('%(name)s -> %(asctime)s : %(levelname)s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
                 fh = logging.FileHandler(logger_file)
@@ -116,8 +116,8 @@ class Game:
 
     def blit_background(self) -> None:
         """Generiert das Hintergrundmuster"""
-        for i in range(self.settings.realsize[0]//TILE_SIZE[0]): # x-Achse
-            for ii in range(self.settings.realsize[1]//TILE_SIZE[1]): # y-Achse
+        for i in range(self.settings.size[0]): # x-Achse
+            for ii in range(self.settings.size[1]): # y-Achse
                 if (i % 2 == 0 and ii % 2 == 0) or (i % 2 != 0 and ii % 2 != 0):
                     pygame.draw.rect(self.mainscreen, (30, 30, 30, 100),  # Farbe ist ein dunkles Grau
                                      pygame.Rect(i*TILE_SIZE[0], ii*TILE_SIZE[1], *TILE_SIZE))
@@ -165,17 +165,27 @@ class Game:
             self.logger.info("game ended")
 
     def draw(self):
-        self.blit_background()
+        self.blit_background() # Hintergrund
+
+        # Alle gegenstände werden gezeichnet
         for entity in self.all_entities:
             self.mainscreen.blit(entity.surf, entity.rect)
 
-        pygame.display.flip() # Aktualisiert den Bildschirm
+        pygame.display.update() # Aktualisiert den Bildschirm
+
+
+    def grey_overlay(self):
+        grey_surf = pygame.Surface(self.settings.realsize)
+        grey_surf.fill((20, 20, 20, 180)) # Graue Farbe
+        grey_surf.set_alpha(180) # macht es Transparent
+        self.mainscreen.blit(grey_surf, grey_surf.get_rect())
 
     def pause(self) -> None:
         if self.logging:
             self.logger.info("pause called")
-        #dt = self.clock.tick()
+
         wait = True
+
         # texts
         size = int(self.settings.size[0] * 2.5) # Den Faktor 2.5 habe ich 'experimentell' durch probieren ermittelt
         font = pygame.font.SysFont(FONT_NAME, size)
@@ -183,11 +193,7 @@ class Game:
         pause_text2 = font.render('Drücke Esc oder Backspace', False, THECOLORS.get("white"))
 
         # Durchsichtiges Graues Overlay
-        grey_surf = pygame.Surface(self.settings.realsize)
-        grey_surf.fill((20, 20, 20, 180))
-        grey_surf.set_alpha(180)
-        self.mainscreen.blit(grey_surf, grey_surf.get_rect())
-
+        self.grey_overlay()
 
         # text1
         pause_text1_centerpos = center(pause_text1, self.settings.realsize)
@@ -227,10 +233,7 @@ class Game:
         pause_text2 = font.render('Drücke Esc oder Backspace', False, THECOLORS.get("white"))
 
         # Durchsichtiges Graues Overlay
-        grey_surf = pygame.Surface(self.settings.realsize)
-        grey_surf.fill((20, 20, 20, 180))
-        grey_surf.set_alpha(180)
-        self.mainscreen.blit(grey_surf, grey_surf.get_rect())
+        self.grey_overlay()
 
         # text1
         pause_text1_centerpos = center(pause_text1, self.settings.realsize)
@@ -285,10 +288,8 @@ class Game:
         pause_text1 = font.render(f'Du hast gewonnen!', False, THECOLORS.get("white"))
         pause_text2 = font.render('Drücke ESC oder Backspace', False, THECOLORS.get("white"))
 
-        grey_surf = pygame.Surface(self.settings.realsize)
-        grey_surf.fill((20, 20, 20, 180))
-        grey_surf.set_alpha(180)
-        self.mainscreen.blit(grey_surf, grey_surf.get_rect())
+        # Durchsichtiges Graues Overlay
+        self.grey_overlay()
 
         # text1
         pause_text1_centerpos = center(pause_text1, self.settings.realsize)

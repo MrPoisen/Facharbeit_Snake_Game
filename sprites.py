@@ -32,6 +32,7 @@ class Direction(Enum):
 
     @staticmethod
     def invert(direction: "Direction"):
+        """Gibt die enteggengesetzte Richtung zurück"""
         if direction == Direction.UP:
             return Direction.DOWN
         elif direction == Direction.RIGHT:
@@ -56,7 +57,7 @@ class SnakeHead(pygame.sprite.Sprite):
         super(SnakeHead, self).__init__()
         self.surf = pygame.Surface(size)
         # Bild
-        self.img: pygame.Surface = pygame.image.load("snakehead.png")
+        self.img: pygame.Surface = pygame.image.load("snakehead.png") # lädt Bild
         self.img = resize((TILE_SIZE[0]-2, TILE_SIZE[1]-2), self.img) # stellt sicher, dass das Bild die richtige Größe hat
 
         self.rect = self.surf.get_rect(x=0, y=0) # Die Schlange startet oben links
@@ -100,7 +101,7 @@ class SnakeHead(pygame.sprite.Sprite):
         self.surf.blit(self.img, pygame.Rect(1,1,18,18))
         self.edges = {"top": top, "right": right, "bottom": bottom, "left": left}
 
-    def accept_direction(self, pressed_keys) -> None:
+    def accept_direction(self, pressed_keys: dict) -> None:
         """Überprüft die übergebenen gedrückten Knöpfe und ändert gegebenenfalls die Richtung der Schlange"""
         if (pressed_keys[K_UP] or pressed_keys[K_w]) and self._lastdirection != Direction.DOWN:
             self.direction = Direction.UP
@@ -130,8 +131,8 @@ class SnakeHead(pygame.sprite.Sprite):
             for tail in self.tails:
                 tail.update() # Bewegt das Tail objekt
                 old_directions.append(tail.direction)
-            old_directions.insert(0, self.direction)
-            old_directions.pop()
+            old_directions.insert(0, self.direction) # Fügt den Kopf hinzu
+            old_directions.pop() # Entfernt das letzte Element, da es nicht gebraucht wird
             for tail, old_direction in zip(self.tails, old_directions):
                 tail.direction = old_direction
 
@@ -170,7 +171,7 @@ class SnakeHead(pygame.sprite.Sprite):
                 # Die neue Textur entspricht die des vorangegangenen Objektes
                 self.tails[index].make_surf(**self.tails[index-1].edges)
 
-    def _full_render(self, tails, tail, index, settings=None):
+    def _full_render(self, tails: List[Tail], tail: Tail, index: int, settings: Settings = None):
         """Generiert die Textur für ein bestimmtes Tail Objekt"""
         top = bottom = left = right = True
 
@@ -218,6 +219,7 @@ class SnakeHead(pygame.sprite.Sprite):
         self.tails.append(tail)
 
     def update_direction(self): # Funktioniert nicht im Wandlosspielmodus (braucht es auch nicht)
+        """Generiert die Richtungen für die Schlange und die Tails basierend auf ihren Positionen"""
         snake_rect = self.rect
         next_taile_rect = self.tails[0].rect
 

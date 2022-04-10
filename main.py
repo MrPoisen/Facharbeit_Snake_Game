@@ -196,7 +196,7 @@ class MainMenu:
                         if self.logging:
                             self.logger.critical(f"Game crashed; Exception: {str(e)}, traceback: {format_exc()}")
                         self.screen = resize(MAINSCREEN_SIZE) # Stellt sicher, das self.screen die richtige Größe hat
-                    else:
+                    else: # Wird ausgeführt, wenn es jeine Exception gab
                         if quit_ is True: # Gesamtes Programm soll beendet werden
                             if self.logging:
                                 self.logger.info("going to quit pygame and call 'exit(1)'")
@@ -260,10 +260,10 @@ class MainMenu:
                 # Werte werden zurückgesetzt auf die vor der Veränderung
                 self.ui_elements.get("gamesize_inputbox1").set_text(str(self.settings.size[0])+" ")
                 self.ui_elements.get("gamesize_inputbox2").set_text(str(self.settings.size[1])+" ")
-                pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 300, 200), resulution=MAINSCREEN_SIZE), "Das Spielfeld muss jeweils größer als 3 sein. Deswegen wurde es zurückgesetzt", self.ui_manager)
+                pygame_gui.windows.ui_message_window.UIMessageWindow(center_object(pygame.Rect(0, 0, 300, 200), resulution=MAINSCREEN_SIZE), "Das Spielfeld muss jeweils größer als 3 sein. Deswegen wurde es zurückgesetzt.", self.ui_manager)
 
                 if self.logging:
-                    self.logger.debug(f"Given width ({width}) or height ({height}) to low (<4)")
+                    self.logger.debug(f"Given width ({width}) and/or height ({height}) to low (<4)")
             else:
                 self.settings.size = [width, height]
 
@@ -394,3 +394,8 @@ if __name__ == "__main__": # ist nur Wahr, wenn main.py direkt aufgerufen wurde 
             lvl = int(argv[2])*10   # DEBUG ist im logging modul eigentlich 10, INFO 20
                                     # so müssen nur 1,2,3,4 oder 5 eingegeben werden um ein Level zu setzen
     MainMenu(logging_=log, lvl=lvl).run() # startet das Programm
+
+    # INFO:
+    #   Interpreter: CPython 3.7.9
+    #   pygame 2.0.1
+    #   pygame_gui 0.6.4
