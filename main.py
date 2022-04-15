@@ -126,7 +126,7 @@ class MainMenu:
         gamemode_selection_rect = pygame.Rect(200, 100, 150, 66)
         gamemode_current_rect, gamemode_selection_rect = center_objects(gamemode_current_rect, gamemode_selection_rect, center_y=150)
         gamemode_selection = pygame_gui.elements.ui_selection_list.UISelectionList(gamemode_selection_rect,
-                                                                                  ["Normal", "Kopftausch", "Wandlos"],
+                                                                                  ["Normal", "Kopftausch", "Wandlos", "Steigerung"],
                                                                                   self.ui_manager,
                                                                                   container=settings_plane)
         gamemode_current = pygame_gui.elements.UILabel(gamemode_current_rect,
@@ -373,8 +373,8 @@ def map_gamemode(name: str) -> str:
     """
     Gibt zu dem Spielmodus-Namen den passende bezeichnung in den Einstellungen zurück und vise versa
     """
-    sett_to_name = {"default": "Normal", "no_walls": "Wandlos", "switching_head": "Kopftausch"}
-    name_to_sett = {"Normal": "default", "Wandlos": "no_walls", "Kopftausch": "switching_head"}
+    sett_to_name = {"default": "Normal", "no_walls": "Wandlos", "switching_head": "Kopftausch", "speed_increase": "Steigerung"}
+    name_to_sett = {"Normal": "default", "Wandlos": "no_walls", "Kopftausch": "switching_head", "Steigerung": "speed_increase"}
     if name in sett_to_name.keys():
         return sett_to_name.get(name)
     elif name in name_to_sett.keys():

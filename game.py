@@ -401,6 +401,28 @@ class WithoutWall(Game):
         elif topleft[1] >= self.settings.realsize[1]:
             obj.rect.topleft = (topleft[0], 0)
 
+class SpeedIncrease(Game):
+    def __init__(self, settings: Settings, logger_file=None, lvl=10):
+        super().__init__(settings, logger_file, lvl)
+        self.settings = self.settings.copy(autosave=False)
+        self.speed_increase = 1
+
+    def apple_logic(self) -> None:
+        collide_with_apple = False
+        if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple): # Wenn der Spieler den Apfel isst
+            collide_with_apple = True
+            apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
+            self.apple.kill()  # Entfernt den Apfel von 'all_entities'
+            if apple_position is False:
+                # Spiel ist zu ende, der Spieler hat gewonnen
+                self.win()
+                return
+            self.apple = Apple(apple_position, TILE_SIZE)
+            self.all_entities.add(self.apple)
+            self.settings.snakespeed += self.speed_increase
+
+        self.snake.update(collide_with_apple)  # Bewegt den Spieler
+
 def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_topleft=None) -> Union[tuple, bool]:
     """
     Die Funktion gibt eine zufällige, freie Position für den Apfel zurück.
@@ -425,7 +447,7 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
     return random.choice(possible_positions)
 
 def run(settings: Settings, presize: Tuple[int, int], logger_file, lvl) -> Tuple[pygame.Surface, bool]:
-    GAMEMODES = {"default": Game, "no_walls": WithoutWall, "switching_head": HeadSwitch}
+    GAMEMODES = {"default": Game, "no_walls": WithoutWall, "switching_head": HeadSwitch, "speed_increase": SpeedIncrease}
     game_class = GAMEMODES.get(settings.gamemode)
     game = game_class(settings, logger_file, lvl)
     game.run()

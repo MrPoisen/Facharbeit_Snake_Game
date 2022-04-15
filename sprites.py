@@ -171,7 +171,7 @@ class SnakeHead(pygame.sprite.Sprite):
                 # Die neue Textur entspricht die des vorangegangenen Objektes
                 self.tails[index].make_surf(**self.tails[index-1].edges)
 
-    def _full_render(self, tails: List[Tail], tail: Tail, index: int, settings: Settings = None):
+    def _full_render(self, tails: List["Tail"], tail: "Tail", index: int, settings: Settings = None):
         """Generiert die Textur für ein bestimmtes Tail Objekt"""
         top = bottom = left = right = True
 

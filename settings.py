@@ -18,6 +18,9 @@ class Settings:
         with open(self.path, "w") as file:
             json.dump(self.content, file)
 
+    def copy(self, autosave: bool = False):
+        return Settings(self.path, self.tilesize, autosave)
+
     def _check(self) -> bool: # Wird eigentlich nicht gebraucht
         for elem in ("gamemode", "size", "snakespeed"):
             if elem not in self.content.keys():
