@@ -56,7 +56,7 @@ class Game:
                 self.logger.addHandler(fh)
                 self.logger.info(f"instance of {type(self)} created")
 
-            self.logger.debug(f"Created an Apple at {self.apple.rect.topleft}")
+            #self.logger.debug(f"Created an Apple at {self.apple.rect.topleft}")
 
         self.settings = settings
 
@@ -65,7 +65,7 @@ class Game:
         if not self.texturepack.isfull():
             if self.logging:
                 self.logger.warning(f"can't use the {self.texturepack.name} TexturePack\nLoading default...")
-            self.texturepack = TexturePack("default", self.)
+            self.texturepack = TexturePack("default", self.settings)
 
         # Spiel/Spielstand
         self.clock = pygame.time.Clock()

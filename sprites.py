@@ -67,6 +67,8 @@ class TexturePack:
         return [os.path.basename(folder) for folder in iglob("textures\\*")]
 
     def _load(self):
+        import importlib
+        from types import MethodType
         path_to_files = f"textures\\{self.folder}\\"
         for filename in iglob(f"{path_to_files}*.png"):
             basename = os.path.basename(filename)[:-4].upper()
@@ -79,9 +81,13 @@ class TexturePack:
             self._textures[basename] = picture # [:-4] entfernt .png
 
         if os.path.exists(f"{path_to_files}background.py"):
-            background = __import__(f"{path_to_files}background.py")
+            # background.py wird geladen
+            module_path = os.path.abspath(f"{path_to_files}background.py")
+            spec = importlib.util.spec_from_file_location("background", module_path)
+            background = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(background)
             if hasattr(background, "draw"):
-                self.drawbackground = background.draw
+                self.drawbackground = MethodType(background.draw, self)
 
         if self.drawbackground is None:
             self.drawbackground = self._default_drawbackground
@@ -398,6 +404,6 @@ class Tail(pygame.sprite.Sprite):
 
 if __name__ == "__main__":
     pygame.display.set_mode((100, 100))
-    #s = Settings()
-    #tp = TexturePack("default", s)
+    s = Settings()
+    tp = TexturePack("default", s)
     print(TexturePack.texturpacks())
