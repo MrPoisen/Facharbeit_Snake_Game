@@ -11,16 +11,17 @@ import pygame_gui
 # lokale Module
 import game
 from settings import Settings
+from sprites import TexturePack
 
 # KONSTANTEN
-MAINSCREEN_SIZE = (800, 400) # Größe des Hauptbildschirms
-TILE_SIZE = (30, 30) # Größe der Spielfelder
+MAINSCREEN_SIZE = (800, 600) # Größe des Hauptbildschirms
+#TILE_SIZE = [30, 30] # Größe der Spielfelder
 
 class MainMenu:
     def __init__(self, settings: Settings = None, logging_=False, lvl=logging.DEBUG):
         # Einstellungen
         if settings is None:
-            settings = Settings(tilesize=TILE_SIZE, autosave=True)
+            settings = Settings(autosave=True)
         self.settings = settings
 
         # logging
@@ -59,7 +60,7 @@ class MainMenu:
 
         # Knopf der zu den Einstellungen führt
         settings = pygame_gui.elements.UIButton(
-            relative_rect=center_object(pygame.Rect(200, 200, 200, 50), center_y=False),
+            relative_rect=center_object(pygame.Rect(200, 300, 200, 50), center_y=False),
             text="Einstellungen",
             manager=self.ui_manager,
             container=main_plane,
@@ -68,7 +69,7 @@ class MainMenu:
 
         # Knopf der das Spiel startet
         start = pygame_gui.elements.UIButton(
-            relative_rect=center_object(pygame.Rect(200, 100, 200, 50), center_y=False),
+            relative_rect=center_object(pygame.Rect(200, 150, 200, 50), center_y=False),
             text="Start",
             manager=self.ui_manager,
             container=main_plane,
@@ -77,7 +78,7 @@ class MainMenu:
 
         # Text der sich über dem Startknopf befindet
         snake_title_text = pygame_gui.elements.UITextBox("<b>Snake Game<b>",
-                                                         center_object(pygame.Rect(220, 40, 100, -1),
+                                                         center_object(pygame.Rect(220, 100, 100, -1),
                                                                                      center_y=False, offset_x=50),
                                                          manager=self.ui_manager,
                                                          container=main_plane,
@@ -88,7 +89,7 @@ class MainMenu:
 
         # Knopf um das Programm zu verlassen
         main_close_button = pygame_gui.elements.UIButton(
-            relative_rect=center_object(pygame.Rect(200, 300, 200, 50), center_y=False),
+            relative_rect=center_object(pygame.Rect(200, 450, 200, 50), center_y=False),
             text="Schließen",
             manager=self.ui_manager,
             container=main_plane,
@@ -114,13 +115,7 @@ class MainMenu:
         self.ui_elements["snakespeed_label"] = snakespeed_label
 
         # Oberfläche für die Spielgröße
-        size_text_rect = pygame.Rect(200, 203, 150, 50)
-        size_inputfiled1_rect = pygame.Rect(200, 200, 150, 50)
-        size_inputfiled2_rect = pygame.Rect(200, 200, 150, 50)
-        size_text_rect, size_inputfiled1_rect, size_inputfiled2_rect = center_objects(size_text_rect,
-                                                                                      size_inputfiled1_rect,
-                                                                                      size_inputfiled2_rect,
-                                                                                      center_y=250)
+
         # Spielmodus
         gamemode_current_rect = pygame.Rect(200, 100, 200, 50)
         gamemode_selection_rect = pygame.Rect(200, 100, 150, 66)
@@ -136,7 +131,29 @@ class MainMenu:
         self.ui_elements["gamemode_selection"] = gamemode_selection
         self.ui_elements["gamemode_current"] = gamemode_current
 
+        # Texturen
+        texture_current_rect = pygame.Rect(200, 100, 200, 50)
+        texture_selection_rect = pygame.Rect(200, 100, 150, 66)
+        texture_current_rect, texture_selection_rect = center_objects(texture_current_rect, texture_selection_rect, center_y=250)
+        texture_selection = pygame_gui.elements.ui_selection_list.UISelectionList(texture_selection_rect,
+                                                                                  TexturePack.texturpacks(),
+                                                                                  self.ui_manager,
+                                                                                  container=settings_plane)
+        texture_current = pygame_gui.elements.UILabel(texture_current_rect,
+                                                       f"Texturen: {self.settings.texturepack}",
+                                                       self.ui_manager, settings_plane)
+
+        self.ui_elements["texture_selection"] = texture_selection
+        self.ui_elements["texture_current"] = texture_current
+
         # Spielfeldgröße
+        size_text_rect = pygame.Rect(200, 203, 150, 50)
+        size_inputfiled1_rect = pygame.Rect(200, 200, 150, 50)
+        size_inputfiled2_rect = pygame.Rect(200, 200, 150, 50)
+        size_text_rect, size_inputfiled1_rect, size_inputfiled2_rect = center_objects(size_text_rect,
+                                                                                      size_inputfiled1_rect,
+                                                                                      size_inputfiled2_rect,
+                                                                                      center_y=350)
         gamesize_textbox = pygame_gui.elements.UILabel(size_text_rect, "Spielfeldgröße:", self.ui_manager, settings_plane)
 
         self.ui_elements["gamesize_textbox"] = gamesize_textbox
@@ -154,7 +171,7 @@ class MainMenu:
         # Speichern/Schließen
         save_rect = pygame.Rect(200, 300, 150, 50)
         quit_rect = pygame.Rect(400, 300, 150, 50)
-        save_rect, quit_rect = center_objects(save_rect, quit_rect, center_y=350)  # center objects
+        save_rect, quit_rect = center_objects(save_rect, quit_rect, center_y=430)  # center objects
 
         save = pygame_gui.elements.UIButton(save_rect, "Speichern", self.ui_manager, settings_plane)
         self.ui_elements["save"] = save

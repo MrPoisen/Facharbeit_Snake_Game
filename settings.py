@@ -1,31 +1,29 @@
 import json
+import os
+import sys
 from typing import List, Tuple, Union
 
 class Settings:
-    def __init__(self, path="gameconfig.json", tilesize: tuple = (20, 20), autosave: bool = False):
+    def __init__(self, path="gameconfig.json", autosave: bool = False):
         self.path = path
         self.load()
-        self.tilesize = tilesize
         self.autosave = autosave
 
     def load(self) -> bool:
         with open(self.path, "r") as file:
             self.content = json.load(file)
 
-        return self._check()
+        if not os.path.exists(f"textures/{self.content.get('texturepack')}"):
+            print(f"Couldn't find {self.content.get('texturepack')}, replacing with 'default'", file=sys.stderr)
+            self.content["texturepack"] = "default"
+            self.save()
 
     def save(self) -> None:
         with open(self.path, "w") as file:
             json.dump(self.content, file)
 
     def copy(self, autosave: bool = False):
-        return Settings(self.path, self.tilesize, autosave)
-
-    def _check(self) -> bool: # Wird eigentlich nicht gebraucht
-        for elem in ("gamemode", "size", "snakespeed"):
-            if elem not in self.content.keys():
-                return False
-        return True
+        return Settings(self.path, autosave)
 
     @property
     def gamemode(self):
@@ -38,8 +36,8 @@ class Settings:
             self.save()
 
     @property
-    def size(self) -> Tuple[int, int]:
-        return tuple(self.content.get("size"))
+    def size(self) -> List[int]:
+        return self.content.get("size")
 
     @property
     def realsize(self) -> Tuple[int, int]:
@@ -68,5 +66,26 @@ class Settings:
     @fps.setter
     def fps(self, obj):
         self.content["fps"] = obj
+        if self.autosave:
+            self.save()
+
+    @property
+    def tilesize(self):
+        return self.content.get("tilesize")
+
+    @tilesize.setter
+    def tilesize(self, obj):
+        if isinstance(obj, (tuple, list)) and len(obj) == 2:
+            self.content["tilesize"] = obj
+            if self.autosave:
+                self.save()
+
+    @property
+    def texturepack(self):
+        return self.content.get("texturepack")
+
+    @texturepack.setter
+    def texturepack(self, name: str):
+        self.content["texturepack"] = name
         if self.autosave:
             self.save()

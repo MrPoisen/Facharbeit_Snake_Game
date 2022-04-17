@@ -14,8 +14,8 @@ from pygame.locals import (
 from pygame.color import THECOLORS
 
 # lokale Module
-from main import resize, center, TILE_SIZE
-from sprites import SnakeHead, Apple, Tail
+from main import center
+from sprites import SnakeHead, Apple, Tail, TexturePack
 from settings import Settings
 
 pygame.font.init() # Aufrufen, falls pygame.font noch nicht initialisiert ist
@@ -40,28 +40,6 @@ class Game:
     Basisklasse für das Spiel, die bereits die standard Snake-Variante implementiert
     """
     def __init__(self, settings: Settings, logger_file=None, lvl=10):
-        self.settings = settings
-
-        # Spiel/Spielstand
-        self.clock = pygame.time.Clock()
-        self.running = False
-        self.quit = False
-
-        # Spieler
-        self.snake = SnakeHead(TILE_SIZE)
-        self.snake.texture()
-        self.apple = Apple(get_apple_position(self.snake, self.settings.realsize), TILE_SIZE)
-
-        # Spielobjekte
-        self.all_entities = pygame.sprite.Group(self.apple, self.snake)
-        self.tails = pygame.sprite.Group()
-
-        # Spielobjekte mit der Snake "verbinden"
-        self.snake.tail_group = self.tails
-        self.snake.all_group = self.all_entities
-
-        self.mainscreen = resize(self.settings.realsize)
-
         # logging
         self.logger = None
         self.logger_file = logger_file
@@ -77,6 +55,39 @@ class Game:
                 fh.setFormatter(format)
                 self.logger.addHandler(fh)
                 self.logger.info(f"instance of {type(self)} created")
+
+            self.logger.debug(f"Created an Apple at {self.apple.rect.topleft}")
+
+        self.settings = settings
+
+        # Texturen
+        self.texturepack = TexturePack(self.settings.texturepack, self.settings)
+        if not self.texturepack.isfull():
+            if self.logging:
+                self.logger.warning(f"can't use the {self.texturepack.name} TexturePack\nLoading default...")
+            self.texturepack = TexturePack("default", self.)
+
+        # Spiel/Spielstand
+        self.clock = pygame.time.Clock()
+        self.running = False
+        self.quit = False
+
+        # Spieler
+        self.snake = SnakeHead(self.texturepack)
+        self.snake.texture()
+        self.apple = Apple(get_apple_position(self.snake, settings), self.texturepack)
+
+        # Spielobjekte
+        self.all_entities = pygame.sprite.Group(self.apple, self.snake)
+        self.tails = pygame.sprite.Group()
+
+        # Spielobjekte mit der Snake "verbinden"
+        self.snake.tail_group = self.tails
+        self.snake.all_group = self.all_entities
+
+        self.mainscreen = pygame.display.set_mode(self.settings.realsize)
+
+
 
     def events(self) -> None:
         for event in pygame.event.get():
@@ -96,13 +107,13 @@ class Game:
         collide_with_apple = False
         if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple): # Wenn der Spieler den Apfel isst
             collide_with_apple = True
-            apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
+            apple_position = get_apple_position(self.snake, self.settings, self.apple.rect.topleft)
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.win()
                 return
-            self.apple = Apple(apple_position, TILE_SIZE)
+            self.apple = Apple(apple_position, self.texturepack)
             self.all_entities.add(self.apple)
 
         self.snake.update(collide_with_apple)  # Bewegt den Spieler
@@ -116,14 +127,17 @@ class Game:
 
     def blit_background(self) -> None:
         """Generiert das Hintergrundmuster"""
+        """
         for i in range(self.settings.size[0]): # x-Achse
             for ii in range(self.settings.size[1]): # y-Achse
                 if (i % 2 == 0 and ii % 2 == 0) or (i % 2 != 0 and ii % 2 != 0):
                     pygame.draw.rect(self.mainscreen, (30, 30, 30, 100),  # Farbe ist ein dunkles Grau
-                                     pygame.Rect(i*TILE_SIZE[0], ii*TILE_SIZE[1], *TILE_SIZE))
+                                     pygame.Rect(i*self.settings.tilesize[0], ii*self.settings.tilesize[1], *self.settings.tilesize))
                 else:
                     pygame.draw.rect(self.mainscreen, THECOLORS.get("black"),
-                                     pygame.Rect(i * TILE_SIZE[0], ii * TILE_SIZE[1], *TILE_SIZE))
+                                     pygame.Rect(i * self.settings.tilesize[0], ii * self.settings.tilesize[1], *self.settings.tilesize))
+        """
+        self.mainscreen.blit(self.texturepack.background, self.texturepack.background.get_rect())
 
     def run(self) -> None:
         self.running = True
@@ -169,7 +183,8 @@ class Game:
 
         # Alle gegenstände werden gezeichnet
         for entity in self.all_entities:
-            self.mainscreen.blit(entity.surf, entity.rect)
+            entity.draw(self.mainscreen)
+            #self.mainscreen.blit(entity.surf, entity.rect)
 
         pygame.display.update() # Aktualisiert den Bildschirm
 
@@ -339,13 +354,13 @@ class HeadSwitch(Game):
         collide_with_apple = False
         if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple):
             collide_with_apple = True
-            apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
+            apple_position = get_apple_position(self.snake, self.settings, self.apple.rect.topleft)
             self.apple.kill()
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.win()
                 return
-            self.apple = Apple(apple_position, TILE_SIZE)
+            self.apple = Apple(apple_position, self.settings.tilesize)
             self.all_entities.add(self.apple)
 
         self.snake.update(collide_with_apple, False)
@@ -377,13 +392,13 @@ class WithoutWall(Game):
         self.move(sprite)
         if pygame.sprite.collide_rect(sprite, self.apple):
             self.collide_with_apple = True
-            apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
+            apple_position = get_apple_position(self.snake, self.settings, self.apple.rect.topleft)
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.win()
                 return
-            self.apple = Apple(apple_position, TILE_SIZE)
+            self.apple = Apple(apple_position, self.texturepack)
             self.all_entities.add(self.apple)
 
         self.snake.update(self.collide_with_apple, False)  # Bewegt den Spieler
@@ -393,11 +408,11 @@ class WithoutWall(Game):
         """Stellt sicher, das die Koordinaten des obj-Objektes immer im Spielfeld sind"""
         topleft = obj.rect.topleft
         if topleft[0] < 0:
-            obj.rect.topleft = (self.settings.realsize[0]-TILE_SIZE[0], topleft[1])
+            obj.rect.topleft = (self.settings.realsize[0]-self.settings.tilesize[0], topleft[1])
         elif topleft[0] >= self.settings.realsize[0]:
             obj.rect.topleft = (0, topleft[1])
         elif topleft[1] < 0:
-            obj.rect.topleft = (topleft[0], self.settings.realsize[1]-TILE_SIZE[1])
+            obj.rect.topleft = (topleft[0], self.settings.realsize[1]-self.settings.tilesize[1])
         elif topleft[1] >= self.settings.realsize[1]:
             obj.rect.topleft = (topleft[0], 0)
 
@@ -411,19 +426,19 @@ class SpeedIncrease(Game):
         collide_with_apple = False
         if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple): # Wenn der Spieler den Apfel isst
             collide_with_apple = True
-            apple_position = get_apple_position(self.snake, self.settings.realsize, self.apple.rect.topleft)
+            apple_position = get_apple_position(self.snake, self.settings, self.apple.rect.topleft)
             self.apple.kill()  # Entfernt den Apfel von 'all_entities'
             if apple_position is False:
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.win()
                 return
-            self.apple = Apple(apple_position, TILE_SIZE)
+            self.apple = Apple(apple_position, self.texturepack)
             self.all_entities.add(self.apple)
             self.settings.snakespeed += self.speed_increase
 
         self.snake.update(collide_with_apple)  # Bewegt den Spieler
 
-def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_topleft=None) -> Union[tuple, bool]:
+def get_apple_position(snake: SnakeHead, settings: Settings, old_apple_topleft=None) -> Union[tuple, bool]:
     """
     Die Funktion gibt eine zufällige, freie Position für den Apfel zurück.
     Das Argument 'old_apple_topleft' wird genutzt, damit der Apfel nicht erneut an derselben Stelle auftaucht
@@ -437,8 +452,8 @@ def get_apple_position(snake: SnakeHead, size: Tuple[int, int], old_apple_toplef
 
 
     possible_positions = [] # Alle freien Positionen
-    for topleft_x in range(0, size[0], TILE_SIZE[0]): # Koordinaten auf der x-Achse
-        for topleft_y in range(0, size[1], TILE_SIZE[1]): # Koordinaten auf der y-Achse
+    for topleft_x in range(0, settings.realsize[0], settings.tilesize[0]): # Koordinaten auf der x-Achse
+        for topleft_y in range(0, settings.realsize[1], settings.tilesize[1]): # Koordinaten auf der y-Achse
             if (topleft_x, topleft_y) not in used_positions:
                 possible_positions.append((topleft_x, topleft_y)) # Position wird hinzugefügt
     if len(possible_positions) == 0:
@@ -454,5 +469,5 @@ def run(settings: Settings, presize: Tuple[int, int], logger_file, lvl) -> Tuple
     if game.quit:
         screen = game.mainscreen
     else:
-        screen = resize(presize)
+        screen = pygame.display.set_mode(presize)
     return screen, game.quit

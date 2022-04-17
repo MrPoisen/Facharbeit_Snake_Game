@@ -1,6 +1,8 @@
 # Standardbibliothek
 from typing import List, Tuple
 from enum import Enum, auto
+import os
+from glob import iglob
 
 # externe Bibliothek
 import pygame
@@ -18,7 +20,7 @@ from pygame.locals import (
 
 # lokale Module
 from settings import Settings
-from main import TILE_SIZE, resize
+#from main import TILE_SIZE
 
 # KONSTANTEN (hier sind es Farben)
 MAINCOLOR = THECOLORS.get("darkgreen")
@@ -44,23 +46,137 @@ class Direction(Enum):
         else:
             raise Exception("Es wurde keine Richtung ('Direction') gegeben")
 
+class TexturePack:
+    def __init__(self, folder, settings: Settings):
+        pygame.display.init()
+        self._settings = settings
+        self.folder = folder
+        self._textures: Dict[str, pygame.Surface] = {}
+        self.drawbackground = None
+
+        self.snakeedge_height = 1
+
+        self._load()
+
+    @property
+    def name(self):
+        return self.folder
+
+    @staticmethod
+    def texturpacks():
+        return [os.path.basename(folder) for folder in iglob("textures\\*")]
+
+    def _load(self):
+        path_to_files = f"textures\\{self.folder}\\"
+        for filename in iglob(f"{path_to_files}*.png"):
+            basename = os.path.basename(filename)[:-4].upper()
+            with open(filename) as file:
+                picture = pygame.image.load(file)
+            if basename == "SNAKEEDGE":
+                picture = pygame.transform.scale(picture.convert_alpha(), (self._settings.tilesize[0], self.snakeedge_height))
+            else:
+                picture = pygame.transform.scale(picture.convert_alpha(), self._settings.tilesize)
+            self._textures[basename] = picture # [:-4] entfernt .png
+
+        if os.path.exists(f"{path_to_files}background.py"):
+            background = __import__(f"{path_to_files}background.py")
+            if hasattr(background, "draw"):
+                self.drawbackground = background.draw
+
+        if self.drawbackground is None:
+            self.drawbackground = self._default_drawbackground
+
+        self._textures["BACKGROUND"] = self.drawbackground()
+
+    def _default_drawbackground(self) -> pygame.Surface:
+        if "BACKGROUND1" in self._textures.keys() and "BACKGROUND2" in self._textures.keys():
+            draw1 = lambda surface, rect: surface.blit(self._textures["BACKGROUND1"], rect)
+            draw2 = lambda surface, rect: surface.blit(self._textures["BACKGROUND2"], rect)
+        else:
+            draw1 = lambda surface, rect: pygame.draw.rect(surface, (30, 30, 30, 100),  # Farbe ist ein dunkles Grau
+                             rect)
+            draw2 = lambda surface, rect: pygame.draw.rect(surface, THECOLORS.get("black"),
+                             rect)
+
+        surface = pygame.Surface(self._settings.realsize)
+        for i in range(self._settings.size[0]): # x-Achse
+            for ii in range(self._settings.size[1]): # y-Achse
+                rect = pygame.Rect(i * self._settings.tilesize[0], ii * self._settings.tilesize[1], *self._settings.tilesize)
+                if (i % 2 == 0 and ii % 2 == 0) or (i % 2 != 0 and ii % 2 != 0):
+                    draw1(surface, rect)
+                else:
+                    draw2(surface, rect)
+        return surface
+
+    def rescale(self, scale: Tuple[int, int]):
+        for name, surface in self._textures.items():
+            if name == "SNAKEEDGE":
+                self._textures[name] = pygame.transform.scale(surface, (scale[0], self.snakeedge_height))
+            else:
+                self._textures[name] = pygame.transform.scale(surface, scale)
+        self._textures["BACKGROUND"] = self.drawbackground()
+
+
+    def isfull(self):
+        for surf_name in ("APPLE", "SNAKEHEAD", "SNAKEHEAD", "SNAKEEDGE", "BACKGROUND"):
+            if surf_name not in self._textures.keys():
+                return False
+        return True
+
+    def create_edges(self, surf: pygame.Surface, top=True, right=True, bottom=True, left=True) -> pygame.Surface:
+        if top:
+            surf.blit(self.snakeedge, (0, 0, self._settings.tilesize[0]-self.snakeedge_height, 0))
+        if right:
+            surf.blit(pygame.transform.rotate(self.snakeedge, 270), (self._settings.tilesize[0]-self.snakeedge_height, 0, self._settings.tilesize[0]-self.snakeedge_height, self._settings.tilesize[1]-self.snakeedge_height))
+        if bottom:
+            surf.blit(pygame.transform.rotate(self.snakeedge, 180), (0, self._settings.tilesize[1]-self.snakeedge_height, self._settings.tilesize[0]-self.snakeedge_height, self._settings.tilesize[1]-self.snakeedge_height))
+        if left:
+            surf.blit(pygame.transform.rotate(self.snakeedge, 90), (0, 0, 0, self._settings.tilesize[1]-self.snakeedge_height))
+        return surf
+
+    @property
+    def apple(self):
+        return self._textures.get("APPLE")
+
+    @property
+    def snakehead(self):
+        return self._textures.get("SNAKEHEAD").copy()
+
+    @property
+    def snakebody(self):
+        return self._textures.get("SNAKEBODY").copy()
+
+    @property
+    def snakeedge(self):
+        return self._textures.get("SNAKEEDGE")
+
+    @property
+    def background(self):
+        return self._textures.get("BACKGROUND")
+
 class Apple(pygame.sprite.Sprite):
-    def __init__(self, position: tuple, size: tuple = (20, 20)):
+    def __init__(self, position: tuple, texturepack: TexturePack):
         super(Apple, self).__init__()
-        self.surf = pygame.Surface(size)
-        self.surf.fill(THECOLORS.get("red"))
-        self.rect = self.surf.get_rect()
+        self.texturepack = texturepack
+        #self.surf = texturepack.apple
+        #self.surf.fill(THECOLORS.get("red"))
+        self.rect = self.texturepack.apple.get_rect()
         self.rect.topleft = position
 
-class SnakeHead(pygame.sprite.Sprite):
-    def __init__(self, size: tuple = (20, 20)):
-        super(SnakeHead, self).__init__()
-        self.surf = pygame.Surface(size)
-        # Bild
-        self.img: pygame.Surface = pygame.image.load("snakehead.png") # lädt Bild
-        self.img = resize((TILE_SIZE[0]-2, TILE_SIZE[1]-2), self.img) # stellt sicher, dass das Bild die richtige Größe hat
+    def draw(self, surface: pygame.Surface):
+        surface.blit(self.texturepack.apple, self.rect)
 
-        self.rect = self.surf.get_rect(x=0, y=0) # Die Schlange startet oben links
+    def rescale(self, size):
+        # Hier muss nichts passieren
+        pass
+
+class SnakeHead(pygame.sprite.Sprite):
+    def __init__(self, texturepack: TexturePack):
+        super(SnakeHead, self).__init__()
+        self.texturepack = texturepack
+        self.surf = self.texturepack.snakehead
+
+        self.rect = self.surf.get_rect() # Die Schlange startet oben links
         self.direction = Direction.RIGHT
         self._lastdirection = self.direction
         self.edges = {"top":True, "right":True, "bottom":True, "left":True} # Welche Kanten gezeichnet werden soll
@@ -69,6 +185,12 @@ class SnakeHead(pygame.sprite.Sprite):
         # Gruppen
         self.tail_group = None
         self.all_group = None
+
+    def draw(self, surface: pygame.Surface):
+        surface.blit(self.surf, self.rect)
+
+    def rescale(self, size: Tuple[int, int]):
+        self.surf = pygame.transform.scale(self.surf, size)
 
     def next_pos(self, move_value: Tuple[int, int] = (20, 20)) -> pygame.sprite.Sprite:
         """Gibt die nächste Position der Schlange als Sprite Objekt zurück"""
@@ -88,18 +210,8 @@ class SnakeHead(pygame.sprite.Sprite):
         return sprite
 
     def make_surf(self, top=True, right=True, bottom=True, left=True) -> None: # Generiert die Darstellung für den Schlangenkopf
-        self.surf.fill(MAINCOLOR)
-        if top:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (TILE_SIZE[0]-1, 0))
-        if right:
-            pygame.draw.line(self.surf, EDGECOLOR, (TILE_SIZE[0]-1, 0), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
-        if bottom:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, TILE_SIZE[1]-1), (TILE_SIZE[0]-1, TILE_SIZE[1]-1))
-        if left:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1))
-
-        self.surf.blit(self.img, pygame.Rect(1,1,18,18))
         self.edges = {"top": top, "right": right, "bottom": bottom, "left": left}
+        self.surf = self.texturepack.create_edges(self.texturepack.snakehead, top, right, bottom, left)
 
     def accept_direction(self, pressed_keys: dict) -> None:
         """Überprüft die übergebenen gedrückten Knöpfe und ändert gegebenenfalls die Richtung der Schlange"""
@@ -117,11 +229,11 @@ class SnakeHead(pygame.sprite.Sprite):
         old_topleft = self.rect.topleft
 
         # Schlangenkopf wird bewegt
-        next_pos_rect = self.next_pos(TILE_SIZE).rect  # Bewegt 'rect'
+        next_pos_rect = self.next_pos(self.texturepack._settings.tilesize).rect  # Bewegt 'rect'
         self.rect.update(next_pos_rect.left, next_pos_rect.top, self.rect.width, self.rect.height)
 
         if collide_with_apple:  # Fügt das Tail objekt hinzu; Die Position entspricht die der alten Schlangenkopfposition
-            tail = Tail(old_topleft, self.direction, TILE_SIZE)
+            tail = Tail(old_topleft, self.direction, self.texturepack)
             self.tails.insert(0, tail)
             self.tail_group.add(tail)
             self.all_group.add(tail)
@@ -174,43 +286,45 @@ class SnakeHead(pygame.sprite.Sprite):
     def _full_render(self, tails: List["Tail"], tail: "Tail", index: int, settings: Settings = None):
         """Generiert die Textur für ein bestimmtes Tail Objekt"""
         top = bottom = left = right = True
+        tilesize = self.texturepack._settings.tilesize
+        realsize = self.texturepack._settings.realsize
 
         # Überprüft in welcher Richtung das vorangegangene Tail-Objekt relativ zum jetzigen ist
-        if (tail.rect.topleft[0] - TILE_SIZE[0] == tails[index - 1].rect.topleft[0]):
+        if (tail.rect.topleft[0] - tilesize[0] == tails[index - 1].rect.topleft[0]):
             left = False
-        elif (tail.rect.topleft[0] + TILE_SIZE[0] == tails[index - 1].rect.topleft[0]):
+        elif (tail.rect.topleft[0] + tilesize[0] == tails[index - 1].rect.topleft[0]):
             right = False
-        elif (tail.rect.topleft[1] - TILE_SIZE[1] == tails[index - 1].rect.topleft[1]):
+        elif (tail.rect.topleft[1] - tilesize[1] == tails[index - 1].rect.topleft[1]):
             top = False
-        elif (tail.rect.topleft[1] + TILE_SIZE[1] == tails[index - 1].rect.topleft[1]):
+        elif (tail.rect.topleft[1] + tilesize[1] == tails[index - 1].rect.topleft[1]):
             bottom = False
         if index + 1 < len(tails):
             # Überprüft in welcher Richtung das nächste Tail-Objekt relativ zum jetzigen ist
-            if tail.rect.topleft[0] - TILE_SIZE[0] == tails[index + 1].rect.topleft[0]:
+            if tail.rect.topleft[0] - tilesize[0] == tails[index + 1].rect.topleft[0]:
                 left = False
-            elif tail.rect.topleft[0] + TILE_SIZE[0] ==  tails[index + 1].rect.topleft[0]:
+            elif tail.rect.topleft[0] + tilesize[0] ==  tails[index + 1].rect.topleft[0]:
                 right = False
-            elif tail.rect.topleft[1] - TILE_SIZE[1] == tails[index + 1].rect.topleft[1]:
+            elif tail.rect.topleft[1] - tilesize[1] == tails[index + 1].rect.topleft[1]:
                 top = False
-            elif tail.rect.topleft[1] + TILE_SIZE[1] == tails[index + 1].rect.topleft[1]:
+            elif tail.rect.topleft[1] + tilesize[1] == tails[index + 1].rect.topleft[1]:
                 bottom = False
 
         if settings is not None: # ist wichtig für den Wandlos Spielmodus
-            if index+1 < len(tails) and tail.rect.topleft[0] == 0 and tails[index+1].rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0]:
+            if index+1 < len(tails) and tail.rect.topleft[0] == 0 and tails[index+1].rect.topleft[0] == realsize[0]-tilesize[0]:
                 left = False
-            elif index+1 < len(tails) and tail.rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0] and tails[index+1].rect.topleft[0] == 0:
+            elif index+1 < len(tails) and tail.rect.topleft[0] == realsize[0]-tilesize[0] and tails[index+1].rect.topleft[0] == 0:
                 right = False
-            elif tail.rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0] and tails[index-1].rect.topleft[0] == 0:
+            elif tail.rect.topleft[0] == realsize[0]-tilesize[0] and tails[index-1].rect.topleft[0] == 0:
                 right = False
-            elif tail.rect.topleft[0] == 0 and tails[index-1].rect.topleft[0] == settings.realsize[0]-TILE_SIZE[0]:
+            elif tail.rect.topleft[0] == 0 and tails[index-1].rect.topleft[0] == realsize[0]-tilesize[0]:
                 left = False
-            elif index+1 < len(tails) and tail.rect.topleft[1] == 0 and tails[index+1].rect.topleft[1] == settings.realsize[1]-TILE_SIZE[1]:
+            elif index+1 < len(tails) and tail.rect.topleft[1] == 0 and tails[index+1].rect.topleft[1] == realsize[1]-tilesize[1]:
                 top = False
-            elif index+1 < len(tails) and tail.rect.topleft[1] == settings.realsize[1]-TILE_SIZE[1] and tails[index+1].rect.topleft[1] == 0:
+            elif index+1 < len(tails) and tail.rect.topleft[1] == realsize[1]-tilesize[1] and tails[index+1].rect.topleft[1] == 0:
                 bottom = False
-            elif tail.rect.topleft[1] == settings.realsize[1]-TILE_SIZE[1] and tails[index-1].rect.topleft[1] == 0:
+            elif tail.rect.topleft[1] == realsize[1]-tilesize[1] and tails[index-1].rect.topleft[1] == 0:
                 bottom = False
-            elif tail.rect.topleft[1] == 0 and tails[index-1].rect.topleft[1] == settings.realsize[1]-TILE_SIZE[1]:
+            elif tail.rect.topleft[1] == 0 and tails[index-1].rect.topleft[1] == realsize[1]-tilesize[1]:
                 top = False
 
         tail.make_surf(top, right, bottom, left)
@@ -250,35 +364,40 @@ class SnakeHead(pygame.sprite.Sprite):
 
 
 class Tail(pygame.sprite.Sprite):
-    def __init__(self, position: tuple, direction: Direction, size: tuple = (20, 20)):
+    def __init__(self, position: tuple, direction: Direction, texturepack: TexturePack):
         super(Tail, self).__init__()
-        self.size = size
-        self.surf = pygame.Surface(size)
+        self.texturepack = texturepack
+        self.surf = self.texturepack.snakebody
         self.rect = self.surf.get_rect()
         self.rect.topleft = position
 
         self.direction = direction
 
+    def draw(self, surface: pygame.Surface):
+        surface.blit(self.surf, self.rect)
+
+    def rescale(self, size: Tuple[int, int]):
+        self.surf = pygame.transform.scale(self.surf, size)
+
     def update(self):
         # Bewegt sich
+        step = self.texturepack._settings.tilesize
         if self.direction == Direction.UP:
-            self.rect.move_ip(0, -self.size[1])
+            self.rect.move_ip(0, -step[1])
         elif self.direction == Direction.RIGHT:
-            self.rect.move_ip(self.size[0], 0)
+            self.rect.move_ip(step[0], 0)
         elif self.direction == Direction.DOWN:
-            self.rect.move_ip(0, self.size[1])
+            self.rect.move_ip(0, step[1])
         elif self.direction == Direction.LEFT:
-            self.rect.move_ip(-self.size[0], 0)
+            self.rect.move_ip(-step[0], 0)
 
     def make_surf(self, top=True, right=True, bottom=True, left=True):
         """Erstellt die Textur"""
-        self.surf.fill(MAINCOLOR)
-        if top:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (TILE_SIZE[0]-1, 0)) # oben entlang
-        if right:
-            pygame.draw.line(self.surf, EDGECOLOR, (TILE_SIZE[0]-1, 0), (TILE_SIZE[0]-1, TILE_SIZE[1]-1)) # rechts entlang
-        if bottom:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, TILE_SIZE[0]-1), (TILE_SIZE[0]-1, TILE_SIZE[1]-1)) # untem entlang
-        if left:
-            pygame.draw.line(self.surf, EDGECOLOR, (0, 0), (0, TILE_SIZE[1]-1)) # links entlang
         self.edges = {"top": top, "right": right, "bottom": bottom, "left": left}
+        self.surf = self.texturepack.create_edges(self.texturepack.snakebody, top, right, bottom, left)
+
+if __name__ == "__main__":
+    pygame.display.set_mode((100, 100))
+    #s = Settings()
+    #tp = TexturePack("default", s)
+    print(TexturePack.texturpacks())
