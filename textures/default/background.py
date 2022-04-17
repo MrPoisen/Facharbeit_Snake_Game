@@ -1,6 +1,6 @@
 import pygame
 
-def draw(texturepack):
+def drawexample(texturepack):
     surface = pygame.Surface(texturepack._settings.realsize)
     for i in range(texturepack._settings.size[0]): # x-Achse
         for ii in range(texturepack._settings.size[1]): # y-Achse
