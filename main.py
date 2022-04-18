@@ -13,6 +13,7 @@ import pygame_gui
 import game
 from settings import Settings
 from sprites import TexturePack
+from gamemodes import get_gamemodes
 
 # KONSTANTEN
 MAINSCREEN_SIZE = (800, 600) # Größe des Hauptbildschirms
@@ -23,6 +24,7 @@ class MainMenu:
         # Einstellungen
         if settings is None:
             settings = Settings(autosave=True)
+        self.available_gamemodes = get_gamemodes()
         self.settings = settings
 
         # logging
@@ -54,7 +56,21 @@ class MainMenu:
         # Benutzeroberfläche erstellen
         self.setup_ui()
 
+        # Spielmodi vorbereiten
+        self._init_gamemodes()
+
         self.running = False
+
+    def get_curgamemode(self):
+        return self.available_gamemodes.get(self.settings.gamemode)
+
+    def _init_gamemodes(self):
+        for name, game in self.available_gamemodes.items():
+            game.init(self.settings, self.ui_manager)
+            if name == self.settings.gamemode:
+                if not game.has_subsettings:
+                    self.ui_elements["gamemode_subsettings_button"].disable()
+
 
     def setup_main_plane(self):
         # main plane
@@ -117,14 +133,13 @@ class MainMenu:
         self.ui_elements["snakespeed_input"] = snakespeed_input
         self.ui_elements["snakespeed_label"] = snakespeed_label
 
-        # Oberfläche für die Spielgröße
 
         # Spielmodus
         gamemode_current_rect = pygame.Rect(200, 100, 200, 50)
         gamemode_selection_rect = pygame.Rect(200, 100, 150, 66)
         gamemode_current_rect, gamemode_selection_rect = center_objects(gamemode_current_rect, gamemode_selection_rect, center_y=150)
         gamemode_selection = pygame_gui.elements.ui_selection_list.UISelectionList(gamemode_selection_rect,
-                                                                                  ["Normal", "Kopftausch", "Wandlos", "Steigerung"],
+                                                                                  list(self.available_gamemodes.keys()),
                                                                                   self.ui_manager,
                                                                                   container=settings_plane)
         gamemode_current = pygame_gui.elements.UILabel(gamemode_current_rect,
@@ -134,10 +149,21 @@ class MainMenu:
         self.ui_elements["gamemode_selection"] = gamemode_selection
         self.ui_elements["gamemode_current"] = gamemode_current
 
+        # Spielmoduseinstellungen
+        gamemode_subsettings_rect = gamemode_current_rect.move(0, 100).inflate(110, 1)
+        gamemode_subsettings_button = pygame_gui.elements.UIButton(
+            relative_rect=gamemode_subsettings_rect,
+            text="Spielmodusspezifische Einstellungen",
+            manager=self.ui_manager,
+            container=settings_plane,
+            visible=True)
+
+        self.ui_elements["gamemode_subsettings_button"] = gamemode_subsettings_button
+
         # Texturen
         texture_current_rect = pygame.Rect(200, 100, 200, 50)
         texture_selection_rect = pygame.Rect(200, 100, 150, 66)
-        texture_current_rect, texture_selection_rect = center_objects(texture_current_rect, texture_selection_rect, center_y=250)
+        texture_current_rect, texture_selection_rect = center_objects(texture_current_rect, texture_selection_rect, center_y=350)
         texture_selection = pygame_gui.elements.ui_selection_list.UISelectionList(texture_selection_rect,
                                                                                   TexturePack.texturpacks(),
                                                                                   self.ui_manager,
@@ -156,7 +182,7 @@ class MainMenu:
         size_text_rect, size_inputfiled1_rect, size_inputfiled2_rect = center_objects(size_text_rect,
                                                                                       size_inputfiled1_rect,
                                                                                       size_inputfiled2_rect,
-                                                                                      center_y=350)
+                                                                                      center_y=450)
         gamesize_textbox = pygame_gui.elements.UILabel(size_text_rect, "Spielfeldgröße:", self.ui_manager, settings_plane)
 
         self.ui_elements["gamesize_textbox"] = gamesize_textbox
@@ -174,7 +200,7 @@ class MainMenu:
         # Speichern/Schließen
         save_rect = pygame.Rect(200, 300, 150, 50)
         quit_rect = pygame.Rect(400, 300, 150, 50)
-        save_rect, quit_rect = center_objects(save_rect, quit_rect, center_y=430)  # center objects
+        save_rect, quit_rect = center_objects(save_rect, quit_rect, center_y=530)  # center objects
 
         save = pygame_gui.elements.UIButton(save_rect, "Speichern", self.ui_manager, settings_plane)
         self.ui_elements["save"] = save
@@ -210,7 +236,7 @@ class MainMenu:
 
                 if event.ui_element == self.ui_elements.get("start"):  # Startknopf wurde gedrückt
                     try:
-                        self.screen, quit_ = game.run(self.settings, MAINSCREEN_SIZE, self.logger_file, self.logging_lvl)
+                        self.screen, quit_ = game.run(self.get_curgamemode(), MAINSCREEN_SIZE, self.logger_file, self.logging_lvl)
                     except Exception as e: # Fehler während der Ausführung des Spiels
                         from traceback import format_exc
                         if self.logging:
@@ -241,7 +267,12 @@ class MainMenu:
 
                 elif event.ui_element == self.ui_elements.get("save"): # Einstellungen-Speichern-Knopf wurde gedrückt
                     self.save()
-
+                elif event.ui_element == self.ui_elements.get("gamemode_subsettings_button"):
+                    self.ui_elements.get("settings_plane").hide()
+                    self.get_curgamemode().set_subsettings_visibility(True)
+                elif self.get_curgamemode().isquit(event.ui_element):
+                    self.ui_elements.get("settings_plane").show()
+                    self.get_curgamemode().set_subsettings_visibility(False)
             self.ui_manager.process_events(event)
 
     def run(self) -> None:
@@ -265,6 +296,10 @@ class MainMenu:
     def save(self) -> None:
         if self.logging:
             self.logger.info("save called")
+
+        # SubSettings speichern
+        self.get_curgamemode().save(self.logger if self.logging else None)
+
         # Spielfeldgröße
         try:
             width = int(self.ui_elements.get("gamesize_inputbox1").get_text().strip(" "))
@@ -320,6 +355,12 @@ class MainMenu:
             self.settings.texturepack = selected
         elif self.logging:
             self.logger.debug("No texture selected")
+
+        # Anpassung des 'gamemode_subsettings_button'
+        if self.get_curgamemode().has_subsettings:
+            self.ui_elements.get("gamemode_subsettings_button").enable()
+        else:
+            self.ui_elements.get("gamemode_subsettings_button").disable()
 
         if self.logging:
             self.logger.debug(f"new settings: {self.settings.content}")

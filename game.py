@@ -17,6 +17,7 @@ from pygame.color import THECOLORS
 from main import center
 from sprites import SnakeHead, Apple, Tail, TexturePack
 from settings import Settings
+from gamemodes import get_gamemodes, Gamemode
 
 pygame.font.init() # Aufrufen, falls pygame.font noch nicht initialisiert ist
 
@@ -39,7 +40,9 @@ class Game:
     """
     Basisklasse für das Spiel, die bereits die standard Snake-Variante implementiert
     """
-    def __init__(self, settings: Settings, logger_file=None, lvl=10):
+    def __init__(self, settings: Settings, logger_file=None, lvl=10, config=None):
+        self.config = config
+
         # logging
         self.logger = None
         self.logger_file = logger_file
@@ -260,7 +263,7 @@ class Game:
                         logger_level = self.logger_level
                         logging = self.logging
 
-                        self.__init__(self.settings) # Reinitialisiert die Instanz ohne logger
+                        self.__init__(self.settings, config=self.config) # Reinitialisiert die Instanz ohne logger
                         # Den Logger der Instanz wieder hinzufügen
                         self.logger = logger
                         self.logger_file = logger_file
@@ -404,10 +407,10 @@ class WithoutWall(Game):
             obj.rect.topleft = (topleft[0], 0)
 
 class SpeedIncrease(Game):
-    def __init__(self, settings: Settings, logger_file=None, lvl=10):
-        super().__init__(settings, logger_file, lvl)
+    def __init__(self, settings: Settings, logger_file=None, lvl=10, config=None):
+        super().__init__(settings, logger_file, lvl, config)
         self.settings = self.settings.copy(autosave=False)
-        self.speed_increase = 1
+        self.speed_increase = config.get("speed_increase")
 
     def apple_logic(self) -> None:
         collide_with_apple = False
@@ -448,13 +451,11 @@ def get_apple_position(snake: SnakeHead, settings: Settings, old_apple_topleft=N
 
     return random.choice(possible_positions)
 
-def run(settings: Settings, presize: Tuple[int, int], logger_file, lvl) -> Tuple[pygame.Surface, bool]:
-    GAMEMODES = {"Normal": Game, "Wandlos": WithoutWall, "Kopftausch": HeadSwitch, "Steigerung": SpeedIncrease}
-    game_class = GAMEMODES.get(settings.gamemode)
-    game = game_class(settings, logger_file, lvl)
-    game.run()
-    if game.quit:
+def run(gamemode, presize: Tuple[int, int], logger_file, lvl) -> Tuple[pygame.Surface, bool]:
+
+    quit = gamemode.run_game(logger_file, lvl)
+    if quit:
         screen = game.mainscreen
     else:
         screen = pygame.display.set_mode(presize)
-    return screen, game.quit
+    return screen, quit
