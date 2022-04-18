@@ -125,20 +125,6 @@ class Game:
                 self.logger.debug(f"Collision with Wall: {hits_wall(self.snake, self.settings.realsize)}, Tails: {bool(pygame.sprite.spritecollide(self.snake, self.tails, dokill=False))}")
             self.dead()
 
-    def blit_background(self) -> None:
-        """Generiert das Hintergrundmuster"""
-        """
-        for i in range(self.settings.size[0]): # x-Achse
-            for ii in range(self.settings.size[1]): # y-Achse
-                if (i % 2 == 0 and ii % 2 == 0) or (i % 2 != 0 and ii % 2 != 0):
-                    pygame.draw.rect(self.mainscreen, (30, 30, 30, 100),  # Farbe ist ein dunkles Grau
-                                     pygame.Rect(i*self.settings.tilesize[0], ii*self.settings.tilesize[1], *self.settings.tilesize))
-                else:
-                    pygame.draw.rect(self.mainscreen, THECOLORS.get("black"),
-                                     pygame.Rect(i * self.settings.tilesize[0], ii * self.settings.tilesize[1], *self.settings.tilesize))
-        """
-        self.mainscreen.blit(self.texturepack.background, self.texturepack.background.get_rect())
-
     def run(self) -> None:
         self.running = True
         passed_time = 0  # Zeit die seit der letzten Bildschirmaktualiserung vergangen ist
@@ -179,7 +165,8 @@ class Game:
             self.logger.info("game ended")
 
     def draw(self):
-        self.blit_background() # Hintergrund
+        # Hintergrund
+        self.mainscreen.blit(self.texturepack.background, self.texturepack.background.get_rect())
 
         # Alle gegenstände werden gezeichnet
         for entity in self.all_entities:
@@ -360,7 +347,7 @@ class HeadSwitch(Game):
                 # Spiel ist zu ende, der Spieler hat gewonnen
                 self.win()
                 return
-            self.apple = Apple(apple_position, self.settings.tilesize)
+            self.apple = Apple(apple_position, self.texturepack)
             self.all_entities.add(self.apple)
 
         self.snake.update(collide_with_apple, False)
@@ -462,7 +449,7 @@ def get_apple_position(snake: SnakeHead, settings: Settings, old_apple_topleft=N
     return random.choice(possible_positions)
 
 def run(settings: Settings, presize: Tuple[int, int], logger_file, lvl) -> Tuple[pygame.Surface, bool]:
-    GAMEMODES = {"default": Game, "no_walls": WithoutWall, "switching_head": HeadSwitch, "speed_increase": SpeedIncrease}
+    GAMEMODES = {"Normal": Game, "Wandlos": WithoutWall, "Kopftausch": HeadSwitch, "Steigerung": SpeedIncrease}
     game_class = GAMEMODES.get(settings.gamemode)
     game = game_class(settings, logger_file, lvl)
     game.run()

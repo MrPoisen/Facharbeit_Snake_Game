@@ -3,6 +3,7 @@ from typing import Tuple, Union
 import logging
 from datetime import datetime
 from sys import argv
+import os
 
 # externe Bibliotheken
 import pygame
@@ -32,6 +33,8 @@ class MainMenu:
         if logging_:
             self.logger = logging.getLogger(__name__)
             self.logger.setLevel(lvl)
+            if not os.path.exists("logs"): # Erstellt den logs Ordner, falls es ihn noch nicht gibt
+                os.makedirs("logs")
             self.logger_file = f"logs/{datetime.now().strftime('%d-%m-%Y %H.%M.%S')}.log"
             format = logging.Formatter('%(name)s -> %(asctime)s : %(levelname)s : %(message)s', datefmt='%d/%m/%Y %H:%M:%S')
             fh = logging.FileHandler(self.logger_file) # Damit der logger in eine Datei schreibt
@@ -125,7 +128,7 @@ class MainMenu:
                                                                                   self.ui_manager,
                                                                                   container=settings_plane)
         gamemode_current = pygame_gui.elements.UILabel(gamemode_current_rect,
-                                                       f"Spielmodus: {map_gamemode(self.settings.gamemode)}",
+                                                       f"Spielmodus: {self.settings.gamemode}",
                                                        self.ui_manager, settings_plane)
 
         self.ui_elements["gamemode_selection"] = gamemode_selection
@@ -290,7 +293,7 @@ class MainMenu:
         if selected is not None: # Es wurde ein Spielmodus gewählt
             gamemode_text: pygame_gui.elements.UILabel = self.ui_elements.get("gamemode_current")
             gamemode_text.set_text(f"Spielmodus: {selected}")
-            self.settings.gamemode = map_gamemode(selected) # Ausgewählter Spielmodus wird gespeichert
+            self.settings.gamemode = selected # Ausgewählter Spielmodus wird gespeichert
         elif self.logging:
             self.logger.debug("no gamemode selected")
 
@@ -307,6 +310,16 @@ class MainMenu:
         else:
             # Wird ausgeführt wenn es keinen Error gibt
             self.settings.snakespeed = speed
+
+        # Texturen
+        selection_list = self.ui_elements.get("texture_selection")
+        selected = selection_list.get_single_selection()
+        if selected is not None:
+            texture_text = self.ui_elements.get("texture_current")
+            texture_text.set_text(f"Texturen: {selected}")
+            self.settings.texturepack = selected
+        elif self.logging:
+            self.logger.debug("No texture selected")
 
         if self.logging:
             self.logger.debug(f"new settings: {self.settings.content}")
@@ -385,19 +398,6 @@ def resize(size, surface=None) -> pygame.Surface:
     else:
         screen = pygame.transform.scale(surface, size)
     return screen
-
-def map_gamemode(name: str) -> str:
-    """
-    Gibt zu dem Spielmodus-Namen den passende bezeichnung in den Einstellungen zurück und vise versa
-    """
-    sett_to_name = {"default": "Normal", "no_walls": "Wandlos", "switching_head": "Kopftausch", "speed_increase": "Steigerung"}
-    name_to_sett = {"Normal": "default", "Wandlos": "no_walls", "Kopftausch": "switching_head", "Steigerung": "speed_increase"}
-    if name in sett_to_name.keys():
-        return sett_to_name.get(name)
-    elif name in name_to_sett.keys():
-        return name_to_sett.get(name)
-    else:
-        raise Exception("gave a wrong name")
 
 if __name__ == "__main__": # ist nur Wahr, wenn main.py direkt aufgerufen wurde (nicht importiert)
     # Standardargumente
