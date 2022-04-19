@@ -1,1 +1,25 @@
-{"gamemode": "Normal", "size": [20, 20], "snakespeed": 2.0, "fps": 240, "tilesize": [30, 30], "texturepack": "default", "gamemode_settings": {"Steigerung": {"speed_increase": 0.5}}}
+{
+    "gamemode": "Normal",
+    "size": [
+        20,
+        20
+    ],
+    "snakespeed": 2.0,
+    "fps": 240,
+    "tilesize": [
+        30,
+        30
+    ],
+    "texturepack": "default",
+    "gamemode_settings": {
+        "Wandlos": {
+            "speed_increase": 0
+        },
+        "Kopfwechsel": {
+            "speed_increase": 0
+        },
+        "Normal": {
+            "speed_increase": 0.0
+        }
+    }
+}

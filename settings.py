@@ -23,7 +23,7 @@ class Settings:
 
     def save(self) -> None:
         with open(self.path, "w") as file:
-            json.dump(self.content, file)
+            json.dump(self.content, file, indent=4)
 
     def copy(self, autosave: bool = False):
         return Settings(self.path, autosave)
@@ -124,7 +124,8 @@ class SubSettings:
         """Gibt zusätzliche Information bezüglich des Spielmodus"""
         return {}
 
-class SpeedIncreaseSettings(SubSettings):
+class GameSettings(SubSettings):
+    gamemode = "Normal"
     def setup(self):
         from main import center_objects
         plane = super().setup()
@@ -135,7 +136,7 @@ class SpeedIncreaseSettings(SubSettings):
         snakespeedincrease_label = pygame_gui.elements.UILabel(snakespeedincrease_label_rect, "Geschwindigkeitsanstieg der Schlange:",
                                                        self.ui_manager, plane)
         snakespeedincrease_input = pygame_gui.elements.UITextEntryLine(snakespeedincrease_input_rect, self.ui_manager, plane)
-        snakespeedincrease_input.set_text(str(self.snakespeedincrease))
+        snakespeedincrease_input.set_text(str(self.snakespeedincrease) + " ")
         self.ui_elements["snakespeedincrease_label"] = snakespeedincrease_label
         self.ui_elements["snakespeedincrease_input"] = snakespeedincrease_input
 
@@ -170,10 +171,16 @@ class SpeedIncreaseSettings(SubSettings):
 
     @property
     def snakespeedincrease(self):
-        return self.settings.gamemode_settings.get("Steigerung").get("speed_increase")
+        return self.settings.gamemode_settings.get(self.gamemode).get("speed_increase")
 
     @snakespeedincrease.setter
     def snakespeedincrease(self, obj):
-        self.settings.gamemode_settings.get("Steigerung")["speed_increase"] = obj
+        self.settings.gamemode_settings.get(self.gamemode)["speed_increase"] = obj
         if self.settings.autosave:
             self.settings.save()
+
+class HeadSwitchSettings(GameSettings):
+    gamemode="Kopfwechsel"
+
+class WithoutWallSettings(GameSettings):
+    gamemode = "Wandlos"

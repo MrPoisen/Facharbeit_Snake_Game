@@ -1,4 +1,4 @@
-from settings import Settings, SpeedIncreaseSettings, SubSettings
+from settings import Settings, GameSettings, HeadSwitchSettings, WithoutWallSettings, SubSettings
 
 
 class Gamemode:
@@ -49,13 +49,12 @@ class Gamemode:
 
 
 def get_gamemodes():
-    from game import Game, SpeedIncrease, WithoutWall, HeadSwitch
-    HeadSwitch_Gamemode = Gamemode(HeadSwitch)
-    WithoutWall_Gamemode = Gamemode(WithoutWall)
-    SpeedIncrease_Gamemode = Gamemode(SpeedIncrease, SpeedIncreaseSettings)
-    Game_Gamemode = Gamemode(Game)
+    from game import Game, WithoutWall, HeadSwitch
+    HeadSwitch_Gamemode = Gamemode(HeadSwitch, HeadSwitchSettings)
+    WithoutWall_Gamemode = Gamemode(WithoutWall, WithoutWallSettings)
+    Game_Gamemode = Gamemode(Game, GameSettings)
 
     StandardGamemodes = {"Normal": Game_Gamemode, "Kopftausch": HeadSwitch_Gamemode,
-            "Wandlos": WithoutWall_Gamemode, "Steigerung": SpeedIncrease_Gamemode}
+            "Wandlos": WithoutWall_Gamemode}
 
     return StandardGamemodes

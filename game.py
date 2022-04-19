@@ -61,7 +61,7 @@ class Game:
 
             #self.logger.debug(f"Created an Apple at {self.apple.rect.topleft}")
 
-        self.settings = settings
+        self.settings = settings.copy(autosave=False)
 
         # Texturen
         self.texturepack = TexturePack(self.settings.texturepack, self.settings)
@@ -118,6 +118,7 @@ class Game:
                 return
             self.apple = Apple(apple_position, self.texturepack)
             self.all_entities.add(self.apple)
+            self.settings.snakespeed += self.config.get("speed_increase")
 
         self.snake.update(collide_with_apple)  # Bewegt den Spieler
 
@@ -352,6 +353,7 @@ class HeadSwitch(Game):
                 return
             self.apple = Apple(apple_position, self.texturepack)
             self.all_entities.add(self.apple)
+            self.settings.snakespeed += self.config.get("speed_increase")
 
         self.snake.update(collide_with_apple, False)
         if collide_with_apple:
@@ -390,6 +392,7 @@ class WithoutWall(Game):
                 return
             self.apple = Apple(apple_position, self.texturepack)
             self.all_entities.add(self.apple)
+            self.settings.snakespeed += self.config.get("speed_increase")
 
         self.snake.update(self.collide_with_apple, False)  # Bewegt den Spieler
 
@@ -406,27 +409,6 @@ class WithoutWall(Game):
         elif topleft[1] >= self.settings.realsize[1]:
             obj.rect.topleft = (topleft[0], 0)
 
-class SpeedIncrease(Game):
-    def __init__(self, settings: Settings, logger_file=None, lvl=10, config=None):
-        super().__init__(settings, logger_file, lvl, config)
-        self.settings = self.settings.copy(autosave=False)
-        self.speed_increase = config.get("speed_increase")
-
-    def apple_logic(self) -> None:
-        collide_with_apple = False
-        if pygame.sprite.collide_rect(self.snake.next_pos(), self.apple): # Wenn der Spieler den Apfel isst
-            collide_with_apple = True
-            apple_position = get_apple_position(self.snake, self.settings, self.apple.rect.topleft)
-            self.apple.kill()  # Entfernt den Apfel von 'all_entities'
-            if apple_position is False:
-                # Spiel ist zu ende, der Spieler hat gewonnen
-                self.win()
-                return
-            self.apple = Apple(apple_position, self.texturepack)
-            self.all_entities.add(self.apple)
-            self.settings.snakespeed += self.speed_increase
-
-        self.snake.update(collide_with_apple)  # Bewegt den Spieler
 
 def get_apple_position(snake: SnakeHead, settings: Settings, old_apple_topleft=None) -> Union[tuple, bool]:
     """
