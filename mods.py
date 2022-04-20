@@ -3,6 +3,7 @@ def mod_gamemodes():
     from glob import iglob
     import os
     import importlib
+    from game import Game
     gamemodes = {}
     for mod_directory in iglob("mods\\*"):
         name = os.path.basename(mod_directory)
@@ -16,7 +17,11 @@ def mod_gamemodes():
         spec.loader.exec_module(mod)
         if not hasattr(mod, "GAMEMODES"):
             continue
-        for value in mod.GAMEMODES.values():
+        for key, value in mod.GAMEMODES.items():
+            if issubclass(type(value), Game):
+                mod.GAMEMODES[key] = Gamemode(value)
+                continue
+
             if not isinstance(value, Gamemode):
                 break
         else: # kein break fand statt

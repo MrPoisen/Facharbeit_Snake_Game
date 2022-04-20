@@ -19,3 +19,13 @@ def draw(texturepack: TexturePack) -> pygame.Surface:
                                    rect)
   return surface
 ````
+
+# Mods
+
+Mods müssen sich im mods Ordner befinden, wie im Beispiel gezeigt.
+Damit selbst erstellte Spielmodi angezeigt werden, müssen diese sich in einem
+````Python
+GAMEMODES: Dict[str, Union[Game, Gamemode]] = {}
+````
+GAMEMODES-dict befinden. Als Schlüssel sollte Text genutzt werden, für die Werte
+ein Gamemode-Objekt oder ein von Game abstamendes Objekt.
