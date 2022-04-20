@@ -50,6 +50,7 @@ class Gamemode:
 
 def get_gamemodes():
     from game import Game, WithoutWall, HeadSwitch
+    from mods import mod_gamemodes
     HeadSwitch_Gamemode = Gamemode(HeadSwitch, HeadSwitchSettings)
     WithoutWall_Gamemode = Gamemode(WithoutWall, WithoutWallSettings)
     Game_Gamemode = Gamemode(Game, GameSettings)
@@ -57,4 +58,6 @@ def get_gamemodes():
     StandardGamemodes = {"Normal": Game_Gamemode, "Kopftausch": HeadSwitch_Gamemode,
             "Wandlos": WithoutWall_Gamemode}
 
+
+    StandardGamemodes.update(mod_gamemodes())
     return StandardGamemodes

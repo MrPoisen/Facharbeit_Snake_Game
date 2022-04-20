@@ -13,12 +13,18 @@ class Settings:
         self.autosave = autosave
 
     def load(self) -> bool:
+        from gamemodes import get_gamemodes
         with open(self.path, "r") as file:
             self.content = json.load(file)
 
         if not os.path.exists(f"textures/{self.content.get('texturepack')}"):
             print(f"Couldn't find {self.content.get('texturepack')}, replacing with 'default'", file=sys.stderr)
             self.content["texturepack"] = "default"
+            self.save()
+
+        if not self.content.get("gamemode") in get_gamemodes().keys():
+            print(f"Couldn't find {self.content.get('texturepack')}, replacing with 'default'", file=sys.stderr)
+            self.content["gamemode"] = "Normal"
             self.save()
 
     def save(self) -> None:
