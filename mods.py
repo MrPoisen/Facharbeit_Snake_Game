@@ -4,6 +4,8 @@ def mod_gamemodes():
     import os
     import importlib
     from game import Game
+    from gamemodes import Gamemode
+    
     gamemodes = {}
     for mod_directory in iglob("mods\\*"):
         name = os.path.basename(mod_directory)

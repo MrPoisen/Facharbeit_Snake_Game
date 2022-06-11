@@ -19,6 +19,11 @@ class Gamemode:
             self.plane = self.subsettings.setup()
 
     @property
+    def screen(self):
+        from pygame.display import set_mode
+        return set_mode(self._settings.size)
+    
+    @property
     def has_subsettings(self) -> bool:
         return self.subsettings is not None
 

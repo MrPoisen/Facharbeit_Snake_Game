@@ -1,11 +1,11 @@
-def add_paths():
-    import sys, os
-    directory = os.path.abspath(os.getcwd())
-    mod_directory = os.path.abspath(os.path.join(directory, os.pardir))
-    game_directory = os.path.abspath(os.path.join(mod_directory, os.pardir))
-    sys.path.append(mod_directory)
-    sys.path.append(game_directory)
-add_paths()
+# def add_paths():
+#     import sys, os
+#     directory = os.path.abspath(os.getcwd())
+#     mod_directory = os.path.abspath(os.path.join(directory, os.pardir))
+#     game_directory = os.path.abspath(os.path.join(mod_directory, os.pardir))
+#     sys.path.append(mod_directory)
+#     sys.path.append(game_directory)
+#add_paths()
 
 from game import Game, get_apple_position
 from gamemodes import Gamemode

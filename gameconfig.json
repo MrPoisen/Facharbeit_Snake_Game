@@ -1,5 +1,5 @@
 {
-    "gamemode": "Normal",
+    "gamemode": "Wandlos",
     "size": [
         20,
         20
@@ -13,13 +13,13 @@
     "texturepack": "default",
     "gamemode_settings": {
         "Wandlos": {
-            "speed_increase": 0
+            "speed_increase": 0.2
         },
         "Kopfwechsel": {
-            "speed_increase": 0
+            "speed_increase": 0.2
         },
         "Normal": {
-            "speed_increase": 0.0
+            "speed_increase": 0.2
         }
     }
 }

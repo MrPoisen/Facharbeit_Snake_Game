@@ -1,5 +1,5 @@
 # Standardbibliothek
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from enum import Enum, auto
 import os
 from glob import iglob
@@ -57,6 +57,7 @@ class TexturePack:
         self.snakeedge_height = 1
 
         self._load()
+        self.rescale(self._settings.tilesize)
 
     @property
     def name(self):

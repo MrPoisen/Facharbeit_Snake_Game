@@ -434,10 +434,9 @@ def get_apple_position(snake: SnakeHead, settings: Settings, old_apple_topleft=N
     return random.choice(possible_positions)
 
 def run(gamemode, presize: Tuple[int, int], logger_file, lvl) -> Tuple[pygame.Surface, bool]:
-
     quit = gamemode.run_game(logger_file, lvl)
     if quit:
-        screen = game.mainscreen
+        screen = gamemode.screen
     else:
         screen = pygame.display.set_mode(presize)
     return screen, quit

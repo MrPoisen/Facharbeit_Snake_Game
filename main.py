@@ -333,7 +333,7 @@ class MainMenu:
             self.logger.debug("no gamemode selected")
 
         # Schlangengeschwindigkeit
-        speed = self.ui_elements.get("snakespeed_input").get_text()
+        speed = self.ui_elements.get("snakespeed_input").get_text().replace(",", ".")
         try:
             speed = float(speed)
             if speed <= 0:
